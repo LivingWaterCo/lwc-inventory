@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Living Water Co. — Bottle Inventory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .stat-card { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+    .modal-overlay { backdrop-filter: blur(4px); }
+    input, select, textarea { outline: none; }
+    input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(14,165,233,0.25); }
+    .delete-btn { opacity: 0; transition: opacity 0.15s; }
+    tr:hover .delete-btn { opacity: 1; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.2s ease; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold text-sm">LW</div>
+        <div>
+          <h1 class="font-bold text-gray-900 leading-tight">Living Water Co.</h1>
+          <p class="text-xs text-gray-500 leading-tight">Bottle Inventory Tracker</p>
+        </div>
+      </div>
+      <div id="connectionStatus" class="text-xs text-gray-400 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+        Connecting…
+      </div>
+    </div>
+  </header>
+  <div id="configBanner" class="bg-amber-50 border-b border-amber-200 hidden">
+    <div class="max-w-6xl mx-auto px-4 py-3 text-sm text-amber-800">
+      ⚙️ <strong>Setup needed:</strong> Open this file in a text editor and paste your Firebase config at the top of the &lt;script&gt; section. See the <code>FIREBASE CONFIG</code> comment below.
+    </div>
+  </div>
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="stat-card rounded-xl p-4 text-white col-span-2 md:col-span-1">
+        <p class="text-sky-100 text-xs font-medium uppercase tracking-wide">Bottles Left</p>
+        <p id="statBottles" class="text-3xl font-bold mt-1">—</p>
+        <p id="statCases" class="text-sky-200 text-xs mt-0.5">— cases</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-gray-200">
+        <p class="text-gray-500 text-xs font-medium uppercase tracking-wide">Cases Sold</p>
+        <p id="statCasesSold" class="text-3xl font-bold text-gray-800 mt-1">—</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-gray-200">
+        <p class="text-gray-500 text-xs font-medium uppercase tracking-wide">Singles Sold</p>
+        <p id="statSinglesSold" class="text-3xl font-bold text-gray-800 mt-1">—</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-gray-200">
+        <p class="text-gray-500 text-xs font-medium uppercase tracking-wide">Total Collected</p>
+        <p id="statRevenue" class="text-3xl font-bold text-gray-800 mt-1">—</p>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-3">
+        <h2 class="font-semibold text-gray-800 flex-1">Sales Log</h2>
+        <div class="flex gap-2">
+          <input id="searchInput" type="text" placeholder="Search name, email…" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-44 focus:border-sky-400 transition" />
+          <button onclick="openModal()" class="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Log Sale
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+              <th class="px-4 py-2.5 text-left font-semibold">Date</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Name</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Type</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Qty</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Bottles</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Org Type</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Payment</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Amount</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Email</th>
+              <th class="px-4 py-2.5 text-left font-semibold"></th>
+            </tr>
+          </thead>
+          <tbody id="salesTableBody" class="divide-y divide-gray-100">
+            <tr id="loadingRow"><td colspan="10" class="px-4 py-10 text-center text-gray-400">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay bg-black/30 p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto fade-in">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900 text-lg">Log a Sale</h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="saleForm" onsubmit="submitSale(event)" class="px-6 py-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Sale Type</label>
+          <div class="flex gap-3">
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="saleType" value="case" class="sr-only peer" onchange="updateQtyLabel()" checked>
+              <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-xl p-3 text-center transition">
+                <div class="text-2xl mb-0.5">📦</div>
+                <div class="text-sm font-semibold text-gray-800">Case</div>
+                <div class="text-xs text-gray-500">24 bottles each</div>
+              </div>
+            </label>
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="saleType" value="single" class="sr-only peer" onchange="updateQtyLabel()">
+              <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-xl p-3 text-center transition">
+                <div class="text-2xl mb-0.5">🍶</div>
+                <div class="text-sm font-semibold text-gray-800">Single Bottles</div>
+                <div class="text-xs text-gray-500">Individual count</div>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" id="qtyLabel">Number of Cases</label>
+            <input type="number" id="quantity" min="1" required placeholder="e.g. 2" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Amount Paid ($)</label>
+            <input type="number" id="amountPaid" min="0" step="0.01" required placeholder="0.00" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Full Name</label>
+          <input type="text" id="buyerName" required placeholder="John Smith" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Email</label>
+          <input type="email" id="buyerEmail" placeholder="john@example.com" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Address</label>
+          <input type="text" id="buyerAddress" placeholder="123 Main St, City, State" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Organization Type</label>
+            <select id="orgType" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-sky-400 transition">
+              <option value="">— Select —</option>
+              <option value="Church">Church</option>
+              <option value="Business">Business</option>
+              <option value="Individual">Individual</option>
+              <option value="Nonprofit">Nonprofit</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Payment Method</label>
+            <select id="paymentMethod" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-sky-400 transition">
+              <option value="">— Select —</option>
+              <option value="Cash">Cash</option>
+              <option value="Check">Check</option>
+              <option value="Card">Card</option>
+              <option value="Venmo">Venmo</option>
+              <option value="Zelle">Zelle</option>
+              <option value="CashApp">Cash App</option>
+              <option value="PayPal">PayPal</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Notes <span class="font-normal text-gray-400">(optional)</span></label>
+          <textarea id="notes" rows="2" placeholder="Any additional details…" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:border-sky-400 transition"></textarea>
+        </div>
+        <div id="formError" class="text-red-500 text-sm hidden"></div>
+        <button type="submit" id="submitBtn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2.5 rounded-xl transition text-sm">Save Sale</button>
+      </form>
+    </div>
+  </div>
+  <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay bg-black/30 p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md fade-in">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900 text-lg">Sale Details</h3>
+        <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="detailContent" class="px-6 py-5 space-y-3 text-sm text-gray-700"></div>
+    </div>
+  </div>
+  <script type="module">
+    // ============================================================
+    //  FIREBASE CONFIG
+    // ============================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIqMnO_jpGGJkzpiB3EzLXOaehcEtJP4E",
+      authDomain: "living-water-inventory.firebaseapp.com",
+      projectId: "living-water-inventory",
+      storageBucket: "living-water-inventory.firebasestorage.app",
+      messagingSenderId: "1001965812858",
+      appId: "1:1001965812858:web:de56791105303b24b98fc3",
+      measurementId: "G-NCGY3L9GPM"
+    };
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    if (firebaseConfig.apiKey === "PASTE_YOUR_API_KEY") {
+      document.getElementById("configBanner").classList.remove("hidden");
+      document.getElementById("loadingRow").innerHTML = `<td colspan="10" class="px-4 py-10 text-center text-amber-600 font-medium">⚙️ Firebase not configured yet. See setup guide.</td>`;
+      document.getElementById("statBottles").textContent = "—";
+      document.getElementById("statCases").textContent = "Set up Firebase to begin";
+    }
+    const STARTING_CASES = 445;
+    const BOTTLES_PER_CASE = 24;
+    const STARTING_BOTTLES = STARTING_CASES * BOTTLES_PER_CASE;
+    let app, db, allSales = [];
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      const q = query(collection(db, "sales"), orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
+        allSales = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderAll();
+        updateStats();
+        const statusEl = document.getElementById("connectionStatus");
+        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span> Live`;
+        statusEl.className = "text-xs text-green-600 flex items-center gap-1.5";
+      }, (err) => {
+        console.error(err);
+        const statusEl = document.getElementById("connectionStatus");
+        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span> Error`;
+        statusEl.className = "text-xs text-red-500 flex items-center gap-1.5";
+      });
+      document.getElementById("searchInput").addEventListener("input", renderAll);
+      window._db = db;
+      window._allSales = () => allSales;
+      window._addSale = async (sale) => { await addDoc(collection(db, "sales"), { ...sale, createdAt: serverTimestamp() }); };
+      window._deleteSale = async (id) => { await deleteDoc(doc(db, "sales", id)); };
+    } catch(e) { console.error("Firebase init failed:", e); }
+    function renderAll() {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allSales.filter(s => !search || (s.buyerName||"").toLowerCase().includes(search) || (s.buyerEmail||"").toLowerCase().includes(search) || (s.orgType||"").toLowerCase().includes(search));
+      const tbody = document.getElementById("salesTableBody");
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-10 text-center text-gray-400">No sales yet. Hit "Log Sale" to add the first one.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = filtered.map(s => {
+        const isCase = s.saleType === "case";
+        const bottles = isCase ? s.quantity * BOTTLES_PER_CASE : s.quantity;
+        const date = s.createdAt?.toDate ? s.createdAt.toDate().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "—";
+        return `<tr class="hover:bg-gray-50 transition cursor-pointer" onclick="showDetail('${s.id}')">
+          <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">${date}</td>
+          <td class="px-4 py-3 font-medium text-gray-900">${esc(s.buyerName||"—")}</td>
+          <td class="px-4 py-3"><span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${isCase?"bg-sky-100 text-sky-700":"bg-purple-100 text-purple-700"}">${isCase?"📦 Case":"🍶 Single"}</span></td>
+          <td class="px-4 py-3 text-gray-700">${s.quantity}</td>
+          <td class="px-4 py-3 text-gray-700">${bottles}</td>
+          <td class="px-4 py-3 text-gray-500 text-xs">${esc(s.orgType||"—")}</td>
+          <td class="px-4 py-3 text-gray-500 text-xs">${esc(s.paymentMethod||"—")}</td>
+          <td class="px-4 py-3 font-medium text-green-700">$${Number(s.amountPaid||0).toFixed(2)}</td>
+          <td class="px-4 py-3 text-gray-500 text-xs truncate max-w-[140px]">${esc(s.buyerEmail||"—")}</td>
+          <td class="px-4 py-3"><button class="delete-btn text-red-400 hover:text-red-600 transition p-1" onclick="event.stopPropagation();confirmDelete('${s.id}')" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td>
+        </tr>`;
+      }).join("");
+    }
+    function updateStats() {
+      let casesSold=0, singlesSold=0, revenue=0;
+      allSales.forEach(s => {
+        if (s.saleType==="case") casesSold+=Number(s.quantity)||0;
+        else singlesSold+=Number(s.quantity)||0;
+        revenue+=Number(s.amountPaid)||0;
+      });
+      const bottlesUsed=casesSold*BOTTLES_PER_CASE+singlesSold;
+      const bottlesLeft=STARTING_BOTTLES-bottlesUsed;
+      document.getElementById("statBottles").textContent=bottlesLeft.toLocaleString();
+      document.getElementById("statCases").textContent=`${(bottlesLeft/BOTTLES_PER_CASE).toFixed(1)} cases remaining`;
+      document.getElementById("statCasesSold").textContent=casesSold;
+      document.getElementById("statSinglesSold").textContent=singlesSold;
+      document.getElementById("statRevenue").textContent="$"+revenue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+    function esc(str){return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+    window.showDetail=(id)=>{
+      const s=allSales.find(x=>x.id===id);if(!s)return;
+      const isCase=s.saleType==="case";
+      const bottles=isCase?s.quantity*BOTTLES_PER_CASE:s.quantity;
+      const date=s.createdAt?.toDate?s.createdAt.toDate().toLocaleString():"—";
+      const rows=[["Name",s.buyerName],["Email",s.buyerEmail],["Address",s.buyerAddress],["Org Type",s.orgType],["Sale Type",isCase?`Case (${s.quantity}×24=${bottles} bottles)`:`${s.quantity} single bottle(s)`],["Payment Method",s.paymentMethod],["Amount Paid",`$${Number(s.amountPaid).toFixed(2)}`],["Notes",s.notes],["Date",date]].filter(([,v])=>v);
+      document.getElementById("detailContent").innerHTML=rows.map(([k,v])=>`<div class="flex gap-3"><span class="text-gray-400 font-medium w-32 shrink-0">${k}</span><span class="text-gray-800">${esc(v)}</span></div>`).join("")+`<button onclick="confirmDelete('${id}');closeDetailModal()" class="mt-4 w-full border border-red-200 text-red-500 hover:bg-red-50 rounded-xl py-2 text-sm transition">Delete this record</button>`;
+      document.getElementById("detailModal").classList.remove("hidden");
+    };
+    window.closeDetailModal=()=>document.getElementById("detailModal").classList.add("hidden");
+    window.confirmDelete=async(id)=>{if(!confirm("Delete this sale record? This cannot be undone."))return;await window._deleteSale(id);};
+    window.renderAll=renderAll;
+    window.updateStats=updateStats;
+  </script>
+  <script>
+    function openModal(){document.getElementById("modal").classList.remove("hidden");document.getElementById("saleForm").reset();updateQtyLabel();document.getElementById("formError").classList.add("hidden");}
+    function closeModal(){document.getElementById("modal").classList.add("hidden");}
+    document.getElementById("modal").addEventListener("click",function(e){if(e.target===this)closeModal();});
+    document.getElementById("detailModal").addEventListener("click",function(e){if(e.target===this)closeDetailModal();});
+    function updateQtyLabel(){const isCase=document.querySelector('input[name="saleType"]:checked')?.value==="case";document.getElementById("qtyLabel").textContent=isCase?"Number of Cases":"Number of Bottles";}
+    async function submitSale(e){
+      e.preventDefault();
+      const btn=document.getElementById("submitBtn"),errEl=document.getElementById("formError");
+      errEl.classList.add("hidden");
+      if(!window._addSale){errEl.textContent="Firebase not configured. Please complete setup first.";errEl.classList.remove("hidden");return;}
+      const saleType=document.querySelector('input[name="saleType"]:checked').value;
+      const quantity=parseInt(document.getElementById("quantity").value);
+      const amountPaid=parseFloat(document.getElementById("amountPaid").value);
+      const buyerName=document.getElementById("buyerName").value.trim();
+      const buyerEmail=document.getElementById("buyerEmail").value.trim();
+      const buyerAddress=document.getElementById("buyerAddress").value.trim();
+      const orgType=document.getElementById("orgType").value;
+      const paymentMethod=document.getElementById("paymentMethod").value;
+      const notes=document.getElementById("notes").value.trim();
+      if(!paymentMethod){errEl.textContent="Please select a payment method.";errEl.classList.remove("hidden");return;}
+      btn.textContent="Saving…";btn.disabled=true;
+      try{await window._addSale({saleType,quantity,amountPaid,buyerName,buyerEmail,buyerAddress,orgType,paymentMethod,notes});closeModal();}
+      catch(err){errEl.textContent="Error saving: "+err.message;errEl.classList.remove("hidden");}
+      finally{btn.textContent="Save Sale";btn.disabled=false;}
+    }
+  </script>
+</body>
+</html>
