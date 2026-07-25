@@ -39,7 +39,7 @@
   <!-- Header -->
   <div class="flex items-center justify-between mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-sky-800">ð§ Living Water Co</h1>
+      <h1 class="text-2xl font-bold text-sky-800">Living Water Co</h1>
       <p class="text-sm text-slate-500">Inventory Management</p>
     </div>
     <div class="text-right text-sm text-slate-500">
@@ -49,12 +49,12 @@
 
   <!-- Tabs -->
   <div class="flex gap-2 flex-wrap mb-6">
-    <button class="tab-btn active px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('dashboard',this)">ð Dashboard</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('record',this)">â Record Sale</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('transactions',this)">ð Transactions</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('holding',this)">ð¦ Holding</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('profits',this)">ð° Profits</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('settings',this)">âï¸ Settings</button>
+    <button class="tab-btn active px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('record',this)">Record Sale</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('transactions',this)">Transactions</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('holding',this)">Holding</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('profits',this)">Profits</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('settings',this)">Settings</button>
   </div>
 
   <!-- ======================== DASHBOARD ======================== -->
@@ -122,11 +122,11 @@
     <div class="giving-box mb-6">
       <div class="flex items-center justify-between">
         <div>
-          <div class="text-sm font-semibold text-emerald-800 mb-1">ð Set Aside for Giving</div>
+          <div class="text-sm font-semibold text-emerald-800 mb-1">Set Aside for Giving</div>
           <div class="text-3xl font-bold text-emerald-700" id="stat-giving">â</div>
           <div class="text-xs text-emerald-600 mt-1" id="stat-giving-pct">10% of net profit</div>
         </div>
-        <div class="text-5xl opacity-20">ð¤²</div>
+        
       </div>
     </div>
 
@@ -168,15 +168,25 @@
             <option value="giveaway">Giveaway ($0)</option>
           </select>
         </div>
-        <div><label class="form-label">Number of Bottles *</label><input id="f-bottles" type="number" min="1" placeholder="24" oninput="updatePriceFromType()"/></div>
+        <div>
+          <label class="form-label">Quantity *</label>
+          <div style="display:flex;gap:8px;align-items:stretch;">
+            <select id="f-unit" onchange="updatePriceFromType()" style="width:auto;flex-shrink:0;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:white;outline:none;">
+              <option value="bottles">Bottles</option>
+              <option value="cases">Cases</option>
+            </select>
+            <input id="f-qty" type="number" min="1" placeholder="1" oninput="updatePriceFromType()" style="flex:1;"/>
+          </div>
+          <div class="text-xs text-slate-400 mt-1" id="qty-hint"></div>
+        </div>
         <div>
           <label class="form-label">Revenue ($) <span id="price-hint" class="font-normal text-slate-400 text-xs"></span></label>
-          <input id="f-revenue" type="number" step="0.01" min="0" placeholder="0.00" oninput="updateCogsPreview()"/>
+          <input id="f-revenue" type="number" step="0.01" min="0" placeholder="0.00" oninput="updateFeeFromPayment();updateCogsPreview()"/>
         </div>
         <div><label class="form-label">Processing Fee ($)</label><input id="f-fee" type="number" step="0.01" min="0" placeholder="0.00" value="0" oninput="updateCogsPreview()"/></div>
         <div>
           <label class="form-label">Payment Method</label>
-          <select id="f-payment">
+          <select id="f-payment" onchange="updateFeeFromPayment();updateCogsPreview()">
             <option value="">â Select â</option>
             <option>Cash</option><option>Check</option><option>Venmo</option><option>Zelle</option><option>PayPal</option><option>Card</option><option>Other</option>
           </select>
@@ -254,7 +264,7 @@
       </div>
       <div class="giving-box flex flex-col justify-between">
         <div>
-          <h3 class="font-semibold text-emerald-800 mb-1">ð Giving (<span id="pl-giving-pct">10</span>%)</h3>
+          <h3 class="font-semibold text-emerald-800 mb-1">Giving (<span id="pl-giving-pct">10</span>%)</h3>
           <div class="text-4xl font-bold text-emerald-700 mt-2" id="pl-giving">â</div>
           <div class="text-sm text-emerald-600 mt-2">Set aside from net profit</div>
         </div>
@@ -372,7 +382,7 @@ function loadSettingsUI() {
   if (document.getElementById('stat-giving-pct')) document.getElementById('stat-giving-pct').textContent = s.givingPct + '% of net profit';
 }
 
-// âââ Helpers ââââââââââââââââââââââââââââââââââââââââââââââ
+// âââ Helpers ââââââââââââââââââââââââââââââââââââââââââââ
 function calcCogs(bottles) {
   const s = getSettings();
   return (bottles / s.bpc) * s.cogsCase;
@@ -570,7 +580,7 @@ function renderHolders() {
       </div>
       <div class="text-3xl font-bold text-amber-500">${h.cases}</div>
       <div class="text-xs text-slate-400 mb-2">cases (${((h.cases||0)*s.bpc).toLocaleString()} bottles)</div>
-      ${h.phone?`<div class="text-xs text-slate-500">ð ${h.phone}</div>`:''}
+      ${h.phone?`<div class="text-xs text-slate-500">${h.phone}</div>`:''}
       ${h.notes?`<div class="text-xs text-slate-400 mt-1 italic">${h.notes}</div>`:''}
     </div>`).join('');
 }
@@ -628,31 +638,51 @@ window.deleteHolder = async function(id) {
 window.updatePriceFromType = function() {
   const s = getSettings();
   const type = document.getElementById('f-pricetype').value;
-  const bottles = parseFloat(document.getElementById('f-bottles').value)||0;
+  const unit = document.getElementById('f-unit').value;
+  const qty = parseFloat(document.getElementById('f-qty').value)||0;
+  const bottles = unit==='cases' ? qty*s.bpc : qty;
+  const qtyHint = document.getElementById('qty-hint');
+  if(qty>0) {
+    qtyHint.textContent = unit==='cases'
+      ? '= '+bottles.toLocaleString()+' bottles'
+      : '= '+(bottles/s.bpc).toFixed(2)+' cases';
+  } else { qtyHint.textContent=''; }
   const revEl = document.getElementById('f-revenue');
   const hint = document.getElementById('price-hint');
   if(type==='retail'){
     if(bottles>0) revEl.value=(bottles*s.retailBottle).toFixed(2);
-    hint.textContent=`@ $${s.retailBottle}/bottle`;
-    revEl.readOnly=true;
+    hint.textContent='@ $'+s.retailBottle+'/bottle (editable)';
   } else if(type==='wholesale'){
     const cases=Math.ceil(bottles/s.bpc);
     if(bottles>0) revEl.value=(cases*s.wholesaleCase).toFixed(2);
-    hint.textContent=`@ $${s.wholesaleCase}/case`;
-    revEl.readOnly=true;
+    hint.textContent='@ $'+s.wholesaleCase+'/case (editable)';
   } else if(type==='giveaway'){
-    revEl.value='0.00'; hint.textContent='Free'; revEl.readOnly=true;
+    revEl.value='0.00'; hint.textContent='Free (editable)';
   } else {
-    hint.textContent=''; revEl.readOnly=false;
+    hint.textContent='';
   }
+  updateFeeFromPayment();
   updateCogsPreview();
 };
 
+window.updateFeeFromPayment = function() {
+  const payment = document.getElementById('f-payment').value;
+  const revenue = parseFloat(document.getElementById('f-revenue').value)||0;
+  let fee = 0;
+  if(payment==='Venmo')       fee = revenue * 0.019;
+  else if(payment==='PayPal') fee = revenue * 0.0349 + 0.49;
+  else if(payment==='Card')   fee = revenue * 0.029 + 0.30;
+  document.getElementById('f-fee').value = fee > 0 ? fee.toFixed(2) : '0';
+};
+
 window.updateCogsPreview = function() {
-  const bottles=parseFloat(document.getElementById('f-bottles').value)||0;
+  const s=getSettings();
+  const unit=document.getElementById('f-unit').value;
+  const qty=parseFloat(document.getElementById('f-qty').value)||0;
+  const bottles=unit==='cases'?qty*s.bpc:qty;
   const revenue=parseFloat(document.getElementById('f-revenue').value)||0;
   const fee=parseFloat(document.getElementById('f-fee').value)||0;
-  if(!bottles){document.getElementById('cogs-preview').textContent='Fill in bottles and revenue to see profit estimate.';return;}
+  if(!bottles){document.getElementById('cogs-preview').textContent='Fill in quantity and revenue to see profit estimate.';return;}
   const cogs=calcCogs(bottles);
   const np=revenue-cogs-fee;
   document.getElementById('cogs-preview').innerHTML=
@@ -662,14 +692,17 @@ window.updateCogsPreview = function() {
 window.submitSale = async function() {
   const name = document.getElementById('f-name').value.trim();
   const by = document.getElementById('f-by').value.trim();
-  const bottles = parseInt(document.getElementById('f-bottles').value);
+  const sett = getSettings();
+  const unit = document.getElementById('f-unit').value;
+  const qty = parseInt(document.getElementById('f-qty').value);
+  const bottles = unit==='cases' ? qty*sett.bpc : qty;
   const revenue = parseFloat(document.getElementById('f-revenue').value)||0;
   const errEl = document.getElementById('form-error');
   const okEl = document.getElementById('form-success');
   errEl.style.display='none'; okEl.style.display='none';
   if(!name){errEl.textContent='Name is required.';errEl.style.display='block';return;}
   if(!by){errEl.textContent='"Recorded By" is required.';errEl.style.display='block';return;}
-  if(!bottles||bottles<1){errEl.textContent='Bottles must be at least 1.';errEl.style.display='block';return;}
+  if(!qty||qty<1){errEl.textContent='Quantity must be at least 1.';errEl.style.display='block';return;}
   const data = {
     name, recordedBy:by,
     email:document.getElementById('f-email').value.trim(),
@@ -677,7 +710,7 @@ window.submitSale = async function() {
     address:document.getElementById('f-address').value.trim(),
     orgtype:document.getElementById('f-orgtype').value,
     priceType:document.getElementById('f-pricetype').value,
-    bottles, revenue,
+    unit, qty, bottles, revenue,
     fee:parseFloat(document.getElementById('f-fee').value)||0,
     payment:document.getElementById('f-payment').value,
     status:document.getElementById('f-status').value,
@@ -696,14 +729,15 @@ window.clearForm = function() {
   ['f-name','f-by','f-email','f-phone','f-address','f-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-orgtype').value='';
   document.getElementById('f-pricetype').value='retail';
-  document.getElementById('f-bottles').value='';
+  document.getElementById('f-unit').value='bottles';
+  document.getElementById('f-qty').value='';
+  document.getElementById('qty-hint').textContent='';
   document.getElementById('f-revenue').value='';
   document.getElementById('f-fee').value='0';
   document.getElementById('f-payment').value='';
   document.getElementById('f-status').value='paid';
-  document.getElementById('f-revenue').readOnly=false;
   document.getElementById('price-hint').textContent='';
-  document.getElementById('cogs-preview').textContent='Fill in bottles and revenue to see profit estimate.';
+  document.getElementById('cogs-preview').textContent='Fill in quantity and revenue to see profit estimate.';
 };
 
 // âââ Tabs âââââââââââââââââââââââââââââââââââââââââââââââââ
