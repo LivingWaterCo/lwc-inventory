@@ -303,6 +303,69 @@
 
 </div>
 
+<!-- Edit Sale Modal -->
+<div id="edit-sale-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center;overflow-y:auto;">
+  <div class="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 my-6 shadow-xl">
+    <h3 class="font-bold text-slate-700 mb-4">Edit Transaction</h3>
+    <input type="hidden" id="e-id"/>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div><label class="form-label">Name / Organization *</label><input id="e-name" type="text"/></div>
+      <div><label class="form-label">Recorded By *</label><input id="e-by" type="text"/></div>
+      <div><label class="form-label">Email</label><input id="e-email" type="email"/></div>
+      <div><label class="form-label">Phone</label><input id="e-phone" type="tel"/></div>
+      <div><label class="form-label">Address</label><input id="e-address" type="text"/></div>
+      <div>
+        <label class="form-label">Organization Type</label>
+        <select id="e-orgtype">
+          <option value="">â Select â</option>
+          <option>Individual</option><option>Church</option><option>Business</option><option>Nonprofit</option><option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Price Type</label>
+        <select id="e-pricetype">
+          <option value="retail">Retail</option>
+          <option value="wholesale">Wholesale</option>
+          <option value="custom">Custom Price</option>
+          <option value="giveaway">Giveaway ($0)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Quantity *</label>
+        <div style="display:flex;gap:8px;align-items:stretch;">
+          <select id="e-unit" style="width:auto;flex-shrink:0;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:white;outline:none;">
+            <option value="bottles">Bottles</option>
+            <option value="cases">Cases</option>
+          </select>
+          <input id="e-qty" type="number" min="1" style="flex:1;"/>
+        </div>
+      </div>
+      <div><label class="form-label">Revenue ($)</label><input id="e-revenue" type="number" step="0.01" min="0"/></div>
+      <div><label class="form-label">Processing Fee ($)</label><input id="e-fee" type="number" step="0.01" min="0"/></div>
+      <div>
+        <label class="form-label">Payment Method</label>
+        <select id="e-payment">
+          <option value="">â Select â</option>
+          <option>Cash</option><option>Check</option><option>Venmo</option><option>Zelle</option><option>PayPal</option><option>Card</option><option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Status</label>
+        <select id="e-status"><option value="paid">Paid</option><option value="unpaid">Not Paid</option></select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="form-label">Notes</label>
+        <textarea id="e-notes" rows="2" style="height:auto;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-5">
+      <button class="btn-primary" onclick="saveEditedSale()">Save Changes</button>
+      <button onclick="closeEditSaleModal()" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Cancel</button>
+    </div>
+    <div id="edit-sale-error" class="mt-2 text-red-500 text-sm" style="display:none;"></div>
+  </div>
+</div>
+
 <!-- Holder Modal -->
 <div id="holder-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center;">
   <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-xl">
@@ -382,7 +445,7 @@ function loadSettingsUI() {
   if (document.getElementById('stat-giving-pct')) document.getElementById('stat-giving-pct').textContent = s.givingPct + '% of net profit';
 }
 
-// âââ Helpers ââââââââââââââââââââââââââââââââââââââââââââ
+// âââ Helpers ââââââââââââââââââââââââââââââââââââââââââââââ
 function calcCogs(bottles) {
   const s = getSettings();
   return (bottles / s.bpc) * s.cogsCase;
@@ -499,9 +562,70 @@ window.renderTransactions = function() {
       <td class="${np>=0?'positive':'negative'} font-semibold">${fmt(np)}</td>
       <td class="text-xs">${t.payment||'â'}</td>
       <td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')" title="Click to toggle">${isPaid?'Paid':'Not Paid'}</span></td>
-      <td><button class="btn-danger" onclick="deleteSale('${t.id}')">â</button></td>
+      <td style="white-space:nowrap;">
+        <button onclick="editSale('${t.id}')" style="font-size:12px;padding:4px 10px;background:#f0f9ff;color:#0369a1;border:none;border-radius:6px;cursor:pointer;margin-right:4px;">Edit</button>
+        <button class="btn-danger" onclick="deleteSale('${t.id}')">â</button>
+      </td>
     </tr>`;
   }).join('');
+};
+
+window.editSale = function(id) {
+  const t = sales.find(x=>x.id===id); if(!t) return;
+  document.getElementById('e-id').value = t.id;
+  document.getElementById('e-name').value = t.name||'';
+  document.getElementById('e-by').value = t.recordedBy||'';
+  document.getElementById('e-email').value = t.email||'';
+  document.getElementById('e-phone').value = t.phone||'';
+  document.getElementById('e-address').value = t.address||'';
+  document.getElementById('e-orgtype').value = t.orgtype||'';
+  document.getElementById('e-pricetype').value = t.priceType||'retail';
+  document.getElementById('e-unit').value = t.unit||'bottles';
+  document.getElementById('e-qty').value = t.qty||t.bottles||'';
+  document.getElementById('e-revenue').value = t.revenue!=null?t.revenue:'';
+  document.getElementById('e-fee').value = t.fee!=null?t.fee:'0';
+  document.getElementById('e-payment').value = t.payment||'';
+  document.getElementById('e-status').value = t.status||'paid';
+  document.getElementById('e-notes').value = t.notes||'';
+  document.getElementById('edit-sale-error').style.display='none';
+  document.getElementById('edit-sale-modal').style.display='flex';
+};
+
+window.closeEditSaleModal = function() {
+  document.getElementById('edit-sale-modal').style.display='none';
+};
+
+window.saveEditedSale = async function() {
+  const id = document.getElementById('e-id').value;
+  const name = document.getElementById('e-name').value.trim();
+  const by = document.getElementById('e-by').value.trim();
+  const unit = document.getElementById('e-unit').value;
+  const qty = parseInt(document.getElementById('e-qty').value);
+  const sett = getSettings();
+  const bottles = unit==='cases' ? qty*sett.bpc : qty;
+  const errEl = document.getElementById('edit-sale-error');
+  errEl.style.display='none';
+  if(!name){errEl.textContent='Name is required.';errEl.style.display='block';return;}
+  if(!by){errEl.textContent='"Recorded By" is required.';errEl.style.display='block';return;}
+  if(!qty||qty<1){errEl.textContent='Quantity must be at least 1.';errEl.style.display='block';return;}
+  const data = {
+    name, recordedBy:by,
+    email:document.getElementById('e-email').value.trim(),
+    phone:document.getElementById('e-phone').value.trim(),
+    address:document.getElementById('e-address').value.trim(),
+    orgtype:document.getElementById('e-orgtype').value,
+    priceType:document.getElementById('e-pricetype').value,
+    unit, qty, bottles,
+    revenue:parseFloat(document.getElementById('e-revenue').value)||0,
+    fee:parseFloat(document.getElementById('e-fee').value)||0,
+    payment:document.getElementById('e-payment').value,
+    status:document.getElementById('e-status').value,
+    notes:document.getElementById('e-notes').value.trim(),
+  };
+  try {
+    await updateDoc(doc(db,'sales',id), data);
+    closeEditSaleModal();
+  } catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}
 };
 
 window.toggleStatus = async function(id, newStatus) {
@@ -669,8 +793,7 @@ window.updateFeeFromPayment = function() {
   const payment = document.getElementById('f-payment').value;
   const revenue = parseFloat(document.getElementById('f-revenue').value)||0;
   let fee = 0;
-  if(payment==='Venmo')       fee = revenue * 0.019;
-  else if(payment==='PayPal') fee = revenue * 0.0349 + 0.49;
+  if(payment==='PayPal')      fee = revenue * 0.0349 + 0.49;
   else if(payment==='Card')   fee = revenue * 0.029 + 0.30;
   document.getElementById('f-fee').value = fee > 0 ? fee.toFixed(2) : '0';
 };
@@ -749,7 +872,7 @@ window.showTab = function(name, btn) {
 };
 
 // init
-loadSettingsUI();
+loodSettingsUI();
 </script>
 </body>
 </html>
