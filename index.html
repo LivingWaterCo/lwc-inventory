@@ -1,326 +1,721 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Living Water Co. — Bottle Inventory</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: 'Segoe UI', system-ui, sans-serif; }
-    .stat-card { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
-    .modal-overlay { backdrop-filter: blur(4px); }
-    input, select, textarea { outline: none; }
-    input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(14,165,233,0.25); }
-    .delete-btn { opacity: 0; transition: opacity 0.15s; }
-    tr:hover .delete-btn { opacity: 1; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-    .fade-in { animation: fadeIn 0.2s ease; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Living Water Co â Inventory</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f9ff; }
+  .tab-btn { transition: all .15s; }
+  .tab-btn.active { background: #0ea5e9; color: white; }
+  .tab-btn:not(.active) { background: white; color: #0369a1; border: 1px solid #bae6fd; }
+  .stat-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+  table { border-collapse: collapse; width: 100%; }
+  th { background: #f0f9ff; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #64748b; padding: 10px 12px; text-align: left; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+  tr:hover td { background: #f8fafc; }
+  .badge-paid { background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; }
+  .badge-unpaid { background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; }
+  input, select, textarea { border: 1px solid #cbd5e1; border-radius:8px; padding:8px 12px; width:100%; font-size:14px; outline:none; background:white; }
+  input:focus, select:focus { border-color:#0ea5e9; box-shadow:0 0 0 3px #bae6fd55; }
+  .btn-primary { background:#0ea5e9; color:white; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; border:none; }
+  .btn-primary:hover { background:#0284c7; }
+  .btn-danger { background:#fee2e2; color:#dc2626; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; border:none; }
+  .btn-danger:hover { background:#fecaca; }
+  .section { display:none; }
+  .section.active { display:block; }
+  .progress-bar { height:16px; border-radius:8px; overflow:hidden; background:#e2e8f0; display:flex; }
+  .form-label { font-size:13px; font-weight:600; color:#374151; margin-bottom:4px; display:block; }
+  .giving-box { background:linear-gradient(135deg,#d1fae5,#a7f3d0); border:1px solid #6ee7b7; border-radius:12px; padding:20px; }
+  .negative { color:#dc2626; }
+  .positive { color:#16a34a; }
+</style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold text-sm">LW</div>
-        <div>
-          <h1 class="font-bold text-gray-900 leading-tight">Living Water Co.</h1>
-          <p class="text-xs text-gray-500 leading-tight">Bottle Inventory Tracker</p>
-        </div>
-      </div>
-      <div id="connectionStatus" class="text-xs text-gray-400 flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
-        Connecting…
-      </div>
+<body>
+
+<div class="max-w-6xl mx-auto px-4 py-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-sky-800">ð§ Living Water Co</h1>
+      <p class="text-sm text-slate-500">Inventory Management</p>
     </div>
-  </header>
-  <div id="configBanner" class="bg-amber-50 border-b border-amber-200 hidden">
-    <div class="max-w-6xl mx-auto px-4 py-3 text-sm text-amber-800">
-      ⚙️ <strong>Setup needed:</strong> Open this file in a text editor and paste your Firebase config at the top of the &lt;script&gt; section. See the <code>FIREBASE CONFIG</code> comment below.
+    <div class="text-right text-sm text-slate-500">
+      <span class="inline-block w-2 h-2 bg-green-400 rounded-full mr-1"></span>Live
     </div>
   </div>
-  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="stat-card rounded-xl p-4 text-white col-span-2 md:col-span-1">
-        <p class="text-sky-100 text-xs font-medium uppercase tracking-wide">Bottles Left</p>
-        <p id="statBottles" class="text-3xl font-bold mt-1">—</p>
-        <p id="statCases" class="text-sky-200 text-xs mt-0.5">— cases</p>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 flex-wrap mb-6">
+    <button class="tab-btn active px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('dashboard',this)">ð Dashboard</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('record',this)">â Record Sale</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('transactions',this)">ð Transactions</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('holding',this)">ð¦ Holding</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('profits',this)">ð° Profits</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('settings',this)">âï¸ Settings</button>
+  </div>
+
+  <!-- ======================== DASHBOARD ======================== -->
+  <div id="tab-dashboard" class="section active">
+
+    <!-- Inventory Bar -->
+    <div class="bg-white rounded-xl p-4 mb-6 shadow-sm">
+      <div class="flex justify-between text-sm text-slate-600 mb-2">
+        <span class="font-semibold">Inventory Overview</span>
+        <span id="bar-label" class="text-slate-400 text-xs">Loading...</span>
       </div>
-      <div class="bg-white rounded-xl p-4 border border-gray-200">
-        <p class="text-gray-500 text-xs font-medium uppercase tracking-wide">Cases Sold</p>
-        <p id="statCasesSold" class="text-3xl font-bold text-gray-800 mt-1">—</p>
+      <div class="progress-bar mb-2">
+        <div id="bar-inhand" class="bg-sky-400" style="width:0%;transition:width .5s;"></div>
+        <div id="bar-holders" class="bg-amber-400" style="width:0%;transition:width .5s;"></div>
+        <div id="bar-sold" class="bg-slate-300" style="width:0%;transition:width .5s;"></div>
       </div>
-      <div class="bg-white rounded-xl p-4 border border-gray-200">
-        <p class="text-gray-500 text-xs font-medium uppercase tracking-wide">Singles Sold</p>
-        <p id="statSinglesSold" class="text-3xl font-bold text-gray-800 mt-1">—</p>
-      </div>
-      <div class="bg-white rounded-xl p-4 border border-gray-200">
-        <p class="text-gray-500 text-xs font-medium uppercase tracking-wide">Total Collected</p>
-        <p id="statRevenue" class="text-3xl font-bold text-gray-800 mt-1">—</p>
+      <div class="flex gap-4 text-xs text-slate-500">
+        <span><span class="inline-block w-3 h-3 rounded-sm bg-sky-400 mr-1"></span>In Hand</span>
+        <span><span class="inline-block w-3 h-3 rounded-sm bg-amber-400 mr-1"></span>With Holders</span>
+        <span><span class="inline-block w-3 h-3 rounded-sm bg-slate-300 mr-1"></span>Sold</span>
       </div>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-3">
-        <h2 class="font-semibold text-gray-800 flex-1">Sales Log</h2>
-        <div class="flex gap-2">
-          <input id="searchInput" type="text" placeholder="Search name, email…" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-44 focus:border-sky-400 transition" />
-          <button onclick="openModal()" class="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Log Sale
-          </button>
-        </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="stat-card">
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Total Received</div>
+        <div class="text-2xl font-bold text-slate-800" id="stat-total">â</div>
+        <div class="text-xs text-slate-400" id="stat-total-cases">â cases</div>
       </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">In Hand</div>
+        <div class="text-2xl font-bold text-sky-600" id="stat-inhand">â</div>
+        <div class="text-xs text-slate-400" id="stat-inhand-cases">â cases</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">With Holders</div>
+        <div class="text-2xl font-bold text-amber-500" id="stat-holders">â</div>
+        <div class="text-xs text-slate-400" id="stat-holders-cases">â cases</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Sold</div>
+        <div class="text-2xl font-bold text-slate-500" id="stat-sold">â</div>
+        <div class="text-xs text-slate-400" id="stat-sold-cases">â cases</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Revenue (Paid)</div>
+        <div class="text-2xl font-bold text-green-600" id="stat-revenue">â</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Proc. Fees</div>
+        <div class="text-2xl font-bold text-red-400" id="stat-fees">â</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Net Profit</div>
+        <div class="text-2xl font-bold" id="stat-profit">â</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Unpaid (Owed)</div>
+        <div class="text-2xl font-bold text-orange-500" id="stat-unpaid">â</div>
+      </div>
+    </div>
+
+    <!-- Giving Box -->
+    <div class="giving-box mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-semibold text-emerald-800 mb-1">ð Set Aside for Giving</div>
+          <div class="text-3xl font-bold text-emerald-700" id="stat-giving">â</div>
+          <div class="text-xs text-emerald-600 mt-1" id="stat-giving-pct">10% of net profit</div>
+        </div>
+        <div class="text-5xl opacity-20">ð¤²</div>
+      </div>
+    </div>
+
+    <!-- Recent -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 font-semibold text-slate-700">Recent Transactions</div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
-              <th class="px-4 py-2.5 text-left font-semibold">Date</th>
-              <th class="px-4 py-2.5 text-left font-semibold">Name</th>
-              <th class="px-4 py-2.5 text-left font-semibold">Type</th>
-              <th class="px-4 py-2.5 text-left font-semibold">Qty</th>
-              <th class="px-4 py-2.5 text-left font-semibold">Bottles</th>
-              <th class="px-4 py-2.5 text-left font-semibold">Org Type</th>
-              <th class="px-4 py-2.5 text-left font-semibold">Payment</th>
-              <th class="px-4 py-2.5 text-left font-semibold">Amount</th>
-              <th class="px-4 py-2.5 text-left font-semibold">Email</th>
-              <th class="px-4 py-2.5 text-left font-semibold"></th>
-            </tr>
-          </thead>
-          <tbody id="salesTableBody" class="divide-y divide-gray-100">
-            <tr id="loadingRow"><td colspan="10" class="px-4 py-10 text-center text-gray-400">Loading…</td></tr>
-          </tbody>
+        <table>
+          <thead><tr><th>Date</th><th>Name</th><th>Bottles</th><th>Revenue</th><th>Net Profit</th><th>Status</th></tr></thead>
+          <tbody id="dash-table"><tr><td colspan="6" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
-  </main>
-  <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay bg-black/30 p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto fade-in">
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h3 class="font-semibold text-gray-900 text-lg">Log a Sale</h3>
-        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
+  </div>
+
+  <!-- ======================== RECORD SALE ======================== -->
+  <div id="tab-record" class="section">
+    <div class="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+      <h2 class="text-lg font-bold text-slate-700 mb-4">Record a Sale</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div><label class="form-label">Name / Organization *</label><input id="f-name" type="text" placeholder="John Smith or Hope Church"/></div>
+        <div><label class="form-label">Recorded By *</label><input id="f-by" type="text" placeholder="Your name"/></div>
+        <div><label class="form-label">Email</label><input id="f-email" type="email" placeholder="email@example.com"/></div>
+        <div><label class="form-label">Phone</label><input id="f-phone" type="tel" placeholder="(555) 000-0000"/></div>
+        <div><label class="form-label">Address</label><input id="f-address" type="text" placeholder="123 Main St, City, State"/></div>
+        <div>
+          <label class="form-label">Organization Type</label>
+          <select id="f-orgtype">
+            <option value="">â Select â</option>
+            <option>Individual</option><option>Church</option><option>Business</option><option>Nonprofit</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Price Type</label>
+          <select id="f-pricetype" onchange="updatePriceFromType()">
+            <option value="retail">Retail ($3.00/bottle)</option>
+            <option value="wholesale">Wholesale ($49.99/case)</option>
+            <option value="custom">Custom Price</option>
+            <option value="giveaway">Giveaway ($0)</option>
+          </select>
+        </div>
+        <div><label class="form-label">Number of Bottles *</label><input id="f-bottles" type="number" min="1" placeholder="24" oninput="updatePriceFromType()"/></div>
+        <div>
+          <label class="form-label">Revenue ($) <span id="price-hint" class="font-normal text-slate-400 text-xs"></span></label>
+          <input id="f-revenue" type="number" step="0.01" min="0" placeholder="0.00" oninput="updateCogsPreview()"/>
+        </div>
+        <div><label class="form-label">Processing Fee ($)</label><input id="f-fee" type="number" step="0.01" min="0" placeholder="0.00" value="0" oninput="updateCogsPreview()"/></div>
+        <div>
+          <label class="form-label">Payment Method</label>
+          <select id="f-payment">
+            <option value="">â Select â</option>
+            <option>Cash</option><option>Check</option><option>Venmo</option><option>Zelle</option><option>PayPal</option><option>Card</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Status</label>
+          <select id="f-status"><option value="paid">Paid</option><option value="unpaid">Not Paid</option></select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="form-label">Notes</label>
+          <textarea id="f-notes" rows="2" style="height:auto;resize:vertical;" placeholder="Any additional notes..."></textarea>
+        </div>
       </div>
-      <form id="saleForm" onsubmit="submitSale(event)" class="px-6 py-5 space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Sale Type</label>
-          <div class="flex gap-3">
-            <label class="flex-1 cursor-pointer">
-              <input type="radio" name="saleType" value="case" class="sr-only peer" onchange="updateQtyLabel()" checked>
-              <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-xl p-3 text-center transition">
-                <div class="text-2xl mb-0.5">📦</div>
-                <div class="text-sm font-semibold text-gray-800">Case</div>
-                <div class="text-xs text-gray-500">24 bottles each</div>
-              </div>
-            </label>
-            <label class="flex-1 cursor-pointer">
-              <input type="radio" name="saleType" value="single" class="sr-only peer" onchange="updateQtyLabel()">
-              <div class="border-2 border-gray-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 rounded-xl p-3 text-center transition">
-                <div class="text-2xl mb-0.5">🍶</div>
-                <div class="text-sm font-semibold text-gray-800">Single Bottles</div>
-                <div class="text-xs text-gray-500">Individual count</div>
-              </div>
-            </label>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1" id="qtyLabel">Number of Cases</label>
-            <input type="number" id="quantity" min="1" required placeholder="e.g. 2" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Amount Paid ($)</label>
-            <input type="number" id="amountPaid" min="0" step="0.01" required placeholder="0.00" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Full Name</label>
-          <input type="text" id="buyerName" required placeholder="John Smith" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Email</label>
-          <input type="email" id="buyerEmail" placeholder="john@example.com" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Address</label>
-          <input type="text" id="buyerAddress" placeholder="123 Main St, City, State" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-sky-400 transition" />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Organization Type</label>
-            <select id="orgType" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-sky-400 transition">
-              <option value="">— Select —</option>
-              <option value="Church">Church</option>
-              <option value="Business">Business</option>
-              <option value="Individual">Individual</option>
-              <option value="Nonprofit">Nonprofit</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Payment Method</label>
-            <select id="paymentMethod" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:border-sky-400 transition">
-              <option value="">— Select —</option>
-              <option value="Cash">Cash</option>
-              <option value="Check">Check</option>
-              <option value="Card">Card</option>
-              <option value="Venmo">Venmo</option>
-              <option value="Zelle">Zelle</option>
-              <option value="CashApp">Cash App</option>
-              <option value="PayPal">PayPal</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Notes <span class="font-normal text-gray-400">(optional)</span></label>
-          <textarea id="notes" rows="2" placeholder="Any additional details…" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:border-sky-400 transition"></textarea>
-        </div>
-        <div id="formError" class="text-red-500 text-sm hidden"></div>
-        <button type="submit" id="submitBtn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2.5 rounded-xl transition text-sm">Save Sale</button>
-      </form>
+      <div id="cogs-preview" class="mt-4 p-3 bg-slate-50 rounded-lg text-sm text-slate-600">Fill in bottles and revenue to see profit estimate.</div>
+      <div class="mt-5 flex gap-3">
+        <button class="btn-primary" onclick="submitSale()">Save Transaction</button>
+        <button onclick="clearForm()" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Clear</button>
+      </div>
+      <div id="form-error" class="mt-3 text-red-600 text-sm" style="display:none;"></div>
+      <div id="form-success" class="mt-3 text-green-600 text-sm" style="display:none;"></div>
     </div>
   </div>
-  <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay bg-black/30 p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md fade-in">
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h3 class="font-semibold text-gray-900 text-lg">Sale Details</h3>
-        <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600 transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
+
+  <!-- ======================== TRANSACTIONS ======================== -->
+  <div id="tab-transactions" class="section">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-slate-700">All Transactions</h2>
+      <select id="filter-status" onchange="renderTransactions()" style="width:auto;padding:6px 10px;font-size:13px;">
+        <option value="">All Status</option><option value="paid">Paid</option><option value="unpaid">Not Paid</option>
+      </select>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Name</th><th>By</th><th>Btls</th><th>Revenue</th><th>COGS</th><th>Fee</th><th>Net Profit</th><th>Payment</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="txn-table"><tr><td colspan="11" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody>
+        </table>
       </div>
-      <div id="detailContent" class="px-6 py-5 space-y-3 text-sm text-gray-700"></div>
     </div>
   </div>
-  <script type="module">
-    // ============================================================
-    //  FIREBASE CONFIG
-    // ============================================================
-    const firebaseConfig = {
-      apiKey: "AIzaSyAIqMnO_jpGGJkzpiB3EzLXOaehcEtJP4E",
-      authDomain: "living-water-inventory.firebaseapp.com",
-      projectId: "living-water-inventory",
-      storageBucket: "living-water-inventory.firebasestorage.app",
-      messagingSenderId: "1001965812858",
-      appId: "1:1001965812858:web:de56791105303b24b98fc3",
-      measurementId: "G-NCGY3L9GPM"
-    };
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    if (firebaseConfig.apiKey === "PASTE_YOUR_API_KEY") {
-      document.getElementById("configBanner").classList.remove("hidden");
-      document.getElementById("loadingRow").innerHTML = `<td colspan="10" class="px-4 py-10 text-center text-amber-600 font-medium">⚙️ Firebase not configured yet. See setup guide.</td>`;
-      document.getElementById("statBottles").textContent = "—";
-      document.getElementById("statCases").textContent = "Set up Firebase to begin";
-    }
-    const STARTING_CASES = 445;
-    const BOTTLES_PER_CASE = 24;
-    const STARTING_BOTTLES = STARTING_CASES * BOTTLES_PER_CASE;
-    let app, db, allSales = [];
-    try {
-      app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-      const q = query(collection(db, "sales"), orderBy("createdAt", "desc"));
-      onSnapshot(q, (snapshot) => {
-        allSales = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderAll();
-        updateStats();
-        const statusEl = document.getElementById("connectionStatus");
-        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span> Live`;
-        statusEl.className = "text-xs text-green-600 flex items-center gap-1.5";
-      }, (err) => {
-        console.error(err);
-        const statusEl = document.getElementById("connectionStatus");
-        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span> Error`;
-        statusEl.className = "text-xs text-red-500 flex items-center gap-1.5";
-      });
-      document.getElementById("searchInput").addEventListener("input", renderAll);
-      window._db = db;
-      window._allSales = () => allSales;
-      window._addSale = async (sale) => { await addDoc(collection(db, "sales"), { ...sale, createdAt: serverTimestamp() }); };
-      window._deleteSale = async (id) => { await deleteDoc(doc(db, "sales", id)); };
-    } catch(e) { console.error("Firebase init failed:", e); }
-    function renderAll() {
-      const search = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = allSales.filter(s => !search || (s.buyerName||"").toLowerCase().includes(search) || (s.buyerEmail||"").toLowerCase().includes(search) || (s.orgType||"").toLowerCase().includes(search));
-      const tbody = document.getElementById("salesTableBody");
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-10 text-center text-gray-400">No sales yet. Hit "Log Sale" to add the first one.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = filtered.map(s => {
-        const isCase = s.saleType === "case";
-        const bottles = isCase ? s.quantity * BOTTLES_PER_CASE : s.quantity;
-        const date = s.createdAt?.toDate ? s.createdAt.toDate().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "—";
-        return `<tr class="hover:bg-gray-50 transition cursor-pointer" onclick="showDetail('${s.id}')">
-          <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">${date}</td>
-          <td class="px-4 py-3 font-medium text-gray-900">${esc(s.buyerName||"—")}</td>
-          <td class="px-4 py-3"><span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${isCase?"bg-sky-100 text-sky-700":"bg-purple-100 text-purple-700"}">${isCase?"📦 Case":"🍶 Single"}</span></td>
-          <td class="px-4 py-3 text-gray-700">${s.quantity}</td>
-          <td class="px-4 py-3 text-gray-700">${bottles}</td>
-          <td class="px-4 py-3 text-gray-500 text-xs">${esc(s.orgType||"—")}</td>
-          <td class="px-4 py-3 text-gray-500 text-xs">${esc(s.paymentMethod||"—")}</td>
-          <td class="px-4 py-3 font-medium text-green-700">$${Number(s.amountPaid||0).toFixed(2)}</td>
-          <td class="px-4 py-3 text-gray-500 text-xs truncate max-w-[140px]">${esc(s.buyerEmail||"—")}</td>
-          <td class="px-4 py-3"><button class="delete-btn text-red-400 hover:text-red-600 transition p-1" onclick="event.stopPropagation();confirmDelete('${s.id}')" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td>
-        </tr>`;
-      }).join("");
-    }
-    function updateStats() {
-      let casesSold=0, singlesSold=0, revenue=0;
-      allSales.forEach(s => {
-        if (s.saleType==="case") casesSold+=Number(s.quantity)||0;
-        else singlesSold+=Number(s.quantity)||0;
-        revenue+=Number(s.amountPaid)||0;
-      });
-      const bottlesUsed=casesSold*BOTTLES_PER_CASE+singlesSold;
-      const bottlesLeft=STARTING_BOTTLES-bottlesUsed;
-      document.getElementById("statBottles").textContent=bottlesLeft.toLocaleString();
-      document.getElementById("statCases").textContent=`${(bottlesLeft/BOTTLES_PER_CASE).toFixed(1)} cases remaining`;
-      document.getElementById("statCasesSold").textContent=casesSold;
-      document.getElementById("statSinglesSold").textContent=singlesSold;
-      document.getElementById("statRevenue").textContent="$"+revenue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-    }
-    function esc(str){return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-    window.showDetail=(id)=>{
-      const s=allSales.find(x=>x.id===id);if(!s)return;
-      const isCase=s.saleType==="case";
-      const bottles=isCase?s.quantity*BOTTLES_PER_CASE:s.quantity;
-      const date=s.createdAt?.toDate?s.createdAt.toDate().toLocaleString():"—";
-      const rows=[["Name",s.buyerName],["Email",s.buyerEmail],["Address",s.buyerAddress],["Org Type",s.orgType],["Sale Type",isCase?`Case (${s.quantity}×24=${bottles} bottles)`:`${s.quantity} single bottle(s)`],["Payment Method",s.paymentMethod],["Amount Paid",`$${Number(s.amountPaid).toFixed(2)}`],["Notes",s.notes],["Date",date]].filter(([,v])=>v);
-      document.getElementById("detailContent").innerHTML=rows.map(([k,v])=>`<div class="flex gap-3"><span class="text-gray-400 font-medium w-32 shrink-0">${k}</span><span class="text-gray-800">${esc(v)}</span></div>`).join("")+`<button onclick="confirmDelete('${id}');closeDetailModal()" class="mt-4 w-full border border-red-200 text-red-500 hover:bg-red-50 rounded-xl py-2 text-sm transition">Delete this record</button>`;
-      document.getElementById("detailModal").classList.remove("hidden");
-    };
-    window.closeDetailModal=()=>document.getElementById("detailModal").classList.add("hidden");
-    window.confirmDelete=async(id)=>{if(!confirm("Delete this sale record? This cannot be undone."))return;await window._deleteSale(id);};
-    window.renderAll=renderAll;
-    window.updateStats=updateStats;
-  </script>
-  <script>
-    function openModal(){document.getElementById("modal").classList.remove("hidden");document.getElementById("saleForm").reset();updateQtyLabel();document.getElementById("formError").classList.add("hidden");}
-    function closeModal(){document.getElementById("modal").classList.add("hidden");}
-    document.getElementById("modal").addEventListener("click",function(e){if(e.target===this)closeModal();});
-    document.getElementById("detailModal").addEventListener("click",function(e){if(e.target===this)closeDetailModal();});
-    function updateQtyLabel(){const isCase=document.querySelector('input[name="saleType"]:checked')?.value==="case";document.getElementById("qtyLabel").textContent=isCase?"Number of Cases":"Number of Bottles";}
-    async function submitSale(e){
-      e.preventDefault();
-      const btn=document.getElementById("submitBtn"),errEl=document.getElementById("formError");
-      errEl.classList.add("hidden");
-      if(!window._addSale){errEl.textContent="Firebase not configured. Please complete setup first.";errEl.classList.remove("hidden");return;}
-      const saleType=document.querySelector('input[name="saleType"]:checked').value;
-      const quantity=parseInt(document.getElementById("quantity").value);
-      const amountPaid=parseFloat(document.getElementById("amountPaid").value);
-      const buyerName=document.getElementById("buyerName").value.trim();
-      const buyerEmail=document.getElementById("buyerEmail").value.trim();
-      const buyerAddress=document.getElementById("buyerAddress").value.trim();
-      const orgType=document.getElementById("orgType").value;
-      const paymentMethod=document.getElementById("paymentMethod").value;
-      const notes=document.getElementById("notes").value.trim();
-      if(!paymentMethod){errEl.textContent="Please select a payment method.";errEl.classList.remove("hidden");return;}
-      btn.textContent="Saving…";btn.disabled=true;
-      try{await window._addSale({saleType,quantity,amountPaid,buyerName,buyerEmail,buyerAddress,orgType,paymentMethod,notes});closeModal();}
-      catch(err){errEl.textContent="Error saving: "+err.message;errEl.classList.remove("hidden");}
-      finally{btn.textContent="Save Sale";btn.disabled=false;}
-    }
-  </script>
+
+  <!-- ======================== HOLDING ======================== -->
+  <div id="tab-holding" class="section">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-slate-700">Inventory Holders</h2>
+      <button class="btn-primary text-sm" onclick="openHolderModal()">+ Add Holder</button>
+    </div>
+    <p class="text-sm text-slate-500 mb-4">Track people or organizations holding inventory on behalf of Living Water Co.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="holders-grid">
+      <div class="text-slate-400 text-sm col-span-3 py-8 text-center">Loading...</div>
+    </div>
+    <div class="mt-4 p-3 bg-sky-50 border border-sky-200 rounded-lg text-sm text-sky-700">
+      <strong>Total with holders:</strong> <span id="holders-total">â</span> bottles (<span id="holders-total-cases">â</span> cases)
+    </div>
+  </div>
+
+  <!-- ======================== PROFITS ======================== -->
+  <div id="tab-profits" class="section">
+    <h2 class="text-lg font-bold text-slate-700 mb-4">P&amp;L Summary</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <h3 class="font-semibold text-slate-600 mb-3">Overall Totals</h3>
+        <table style="font-size:14px;">
+          <tr><td class="py-1 text-slate-500 pr-8">Bottles Sold</td><td class="py-1 font-semibold text-right" id="pl-bottles">â</td></tr>
+          <tr><td class="py-1 text-slate-500">Revenue (Paid)</td><td class="py-1 font-semibold text-green-600 text-right" id="pl-revenue">â</td></tr>
+          <tr><td class="py-1 text-slate-500">COGS</td><td class="py-1 font-semibold text-red-500 text-right" id="pl-cogs">â</td></tr>
+          <tr><td class="py-1 text-slate-500">Processing Fees</td><td class="py-1 font-semibold text-red-400 text-right" id="pl-fees">â</td></tr>
+          <tr style="border-top:2px solid #e2e8f0;">
+            <td class="pt-3 font-bold text-slate-700">Net Profit</td>
+            <td class="pt-3 font-bold text-right text-xl" id="pl-profit">â</td>
+          </tr>
+        </table>
+      </div>
+      <div class="giving-box flex flex-col justify-between">
+        <div>
+          <h3 class="font-semibold text-emerald-800 mb-1">ð Giving (<span id="pl-giving-pct">10</span>%)</h3>
+          <div class="text-4xl font-bold text-emerald-700 mt-2" id="pl-giving">â</div>
+          <div class="text-sm text-emerald-600 mt-2">Set aside from net profit</div>
+        </div>
+        <div class="mt-4 text-xs text-emerald-700 bg-white bg-opacity-50 rounded-lg p-2">
+          Net Profit Ã <span id="pl-giving-pct2">10</span>% = Giving amount
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 font-semibold text-slate-600">Per-Transaction P&amp;L</div>
+      <div class="overflow-x-auto">
+        <table>
+          <thead><tr><th>Date</th><th>Name</th><th>Bottles</th><th>Revenue</th><th>COGS</th><th>Proc. Fee</th><th>Net Profit</th><th>Status</th></tr></thead>
+          <tbody id="pl-table"><tr><td colspan="8" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== SETTINGS ======================== -->
+  <div id="tab-settings" class="section">
+    <div class="bg-white rounded-xl shadow-sm p-6 max-w-lg">
+      <h2 class="text-lg font-bold text-slate-700 mb-4">Settings</h2>
+      <div class="space-y-4">
+        <div><label class="form-label">Starting Cases</label><input id="s-starting-cases" type="number" value="445"/><p class="text-xs text-slate-400 mt-1">Original inventory (445 Ã 24 = 10,680 bottles)</p></div>
+        <div><label class="form-label">Bottles per Case</label><input id="s-bpc" type="number" value="24"/></div>
+        <div><label class="form-label">COGS per Case ($)</label><input id="s-cogs-case" type="number" step="0.01" value="37.44"/><p class="text-xs text-slate-400 mt-1">Your cost per case ($37.44 = $1.56/bottle)</p></div>
+        <div><label class="form-label">Retail Price per Bottle ($)</label><input id="s-retail-bottle" type="number" step="0.01" value="3.00"/></div>
+        <div><label class="form-label">Wholesale Price per Case ($)</label><input id="s-wholesale-case" type="number" step="0.01" value="49.99"/></div>
+        <div><label class="form-label">Giving Percentage (%)</label><input id="s-giving-pct" type="number" step="0.1" value="10"/></div>
+      </div>
+      <button class="btn-primary mt-6" onclick="saveSettings()">Save Settings</button>
+      <div id="settings-msg" class="mt-3 text-green-600 text-sm" style="display:none;">Settings saved!</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Holder Modal -->
+<div id="holder-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center;">
+  <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-xl">
+    <h3 class="font-bold text-slate-700 mb-4" id="holder-modal-title">Add Holder</h3>
+    <input type="hidden" id="h-id"/>
+    <div class="space-y-3">
+      <div><label class="form-label">Name / Organization *</label><input id="h-name" type="text" placeholder="Jane Doe or First Baptist"/></div>
+      <div><label class="form-label">Cases Holding *</label><input id="h-cases" type="number" min="1" placeholder="10"/></div>
+      <div><label class="form-label">Phone / Contact</label><input id="h-phone" type="text" placeholder="(555) 000-0000"/></div>
+      <div><label class="form-label">Notes</label><input id="h-notes" type="text" placeholder="Location, agreement details..."/></div>
+    </div>
+    <div class="flex gap-3 mt-5">
+      <button class="btn-primary" onclick="saveHolder()">Save</button>
+      <button onclick="closeHolderModal()" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Cancel</button>
+    </div>
+    <div id="holder-error" class="mt-2 text-red-500 text-sm" style="display:none;"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, deleteDoc, doc,
+  onSnapshot, serverTimestamp, query, orderBy, updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAIqMnO_jpGGJkzpiB3EzLXOaehcEtJP4E",
+  authDomain: "living-water-inventory.firebaseapp.com",
+  projectId: "living-water-inventory",
+  storageBucket: "living-water-inventory.firebasestorage.app",
+  messagingSenderId: "1001965812858",
+  appId: "1:1001965812858:web:de56791105303b24b98fc3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let sales = [];
+let holders = [];
+
+// âââ Settings âââââââââââââââââââââââââââââââââââââââââââââ
+function getSettings() {
+  return {
+    startingCases: parseFloat(localStorage.getItem('lwc_startingCases') || '445'),
+    bpc: parseFloat(localStorage.getItem('lwc_bpc') || '24'),
+    cogsCase: parseFloat(localStorage.getItem('lwc_cogsCase') || '37.44'),
+    retailBottle: parseFloat(localStorage.getItem('lwc_retailBottle') || '3.00'),
+    wholesaleCase: parseFloat(localStorage.getItem('lwc_wholesaleCase') || '49.99'),
+    givingPct: parseFloat(localStorage.getItem('lwc_givingPct') || '10'),
+  };
+}
+
+window.saveSettings = function() {
+  localStorage.setItem('lwc_startingCases', document.getElementById('s-starting-cases').value);
+  localStorage.setItem('lwc_bpc', document.getElementById('s-bpc').value);
+  localStorage.setItem('lwc_cogsCase', document.getElementById('s-cogs-case').value);
+  localStorage.setItem('lwc_retailBottle', document.getElementById('s-retail-bottle').value);
+  localStorage.setItem('lwc_wholesaleCase', document.getElementById('s-wholesale-case').value);
+  localStorage.setItem('lwc_givingPct', document.getElementById('s-giving-pct').value);
+  const msg = document.getElementById('settings-msg');
+  msg.style.display = 'block';
+  setTimeout(() => msg.style.display = 'none', 2500);
+  refreshAll();
+};
+
+function loadSettingsUI() {
+  const s = getSettings();
+  document.getElementById('s-starting-cases').value = s.startingCases;
+  document.getElementById('s-bpc').value = s.bpc;
+  document.getElementById('s-cogs-case').value = s.cogsCase;
+  document.getElementById('s-retail-bottle').value = s.retailBottle;
+  document.getElementById('s-wholesale-case').value = s.wholesaleCase;
+  document.getElementById('s-giving-pct').value = s.givingPct;
+  if (document.getElementById('pl-giving-pct')) document.getElementById('pl-giving-pct').textContent = s.givingPct;
+  if (document.getElementById('pl-giving-pct2')) document.getElementById('pl-giving-pct2').textContent = s.givingPct;
+  if (document.getElementById('stat-giving-pct')) document.getElementById('stat-giving-pct').textContent = s.givingPct + '% of net profit';
+}
+
+// âââ Helpers ââââââââââââââââââââââââââââââââââââââââââââââ
+function calcCogs(bottles) {
+  const s = getSettings();
+  return (bottles / s.bpc) * s.cogsCase;
+}
+function fmt(n) {
+  if (isNaN(n)) return '$0.00';
+  const sign = n < 0 ? '-$' : '$';
+  return sign + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtDate(ts) {
+  if (!ts) return 'â';
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'});
+  } catch(e) { return 'â'; }
+}
+
+// âââ Listeners ââââââââââââââââââââââââââââââââââââââââââââ
+onSnapshot(query(collection(db,'sales'), orderBy('createdAt','desc')), snap => {
+  sales = snap.docs.map(d => ({id:d.id, ...d.data()}));
+  refreshAll();
+});
+
+onSnapshot(query(collection(db,'holders'), orderBy('createdAt','desc')), snap => {
+  holders = snap.docs.map(d => ({id:d.id, ...d.data()}));
+  renderHolders();
+  renderDashboard();
+});
+
+function refreshAll() {
+  renderDashboard();
+  renderTransactions();
+  renderPL();
+}
+
+// âââ Dashboard ââââââââââââââââââââââââââââââââââââââââââââ
+function renderDashboard() {
+  const s = getSettings();
+  const totalBottles = s.startingCases * s.bpc;
+  const soldBottles = sales.reduce((a,t) => a+(t.bottles||0), 0);
+  const holderBottles = holders.reduce((a,h) => a+((h.cases||0)*s.bpc), 0);
+  const inHandBottles = Math.max(0, totalBottles - soldBottles - holderBottles);
+  const paidSales = sales.filter(t => t.status === 'paid');
+  const unpaidSales = sales.filter(t => t.status !== 'paid');
+  const revenue = paidSales.reduce((a,t) => a+(t.revenue||0), 0);
+  const fees = sales.reduce((a,t) => a+(t.fee||0), 0);
+  const cogs = sales.reduce((a,t) => a+calcCogs(t.bottles||0), 0);
+  const netProfit = revenue - cogs - fees;
+  const giving = netProfit * (s.givingPct / 100);
+  const unpaid = unpaidSales.reduce((a,t) => a+(t.revenue||0), 0);
+
+  document.getElementById('bar-inhand').style.width = (inHandBottles/totalBottles*100)+'%';
+  document.getElementById('bar-holders').style.width = (holderBottles/totalBottles*100)+'%';
+  document.getElementById('bar-sold').style.width = (soldBottles/totalBottles*100)+'%';
+  document.getElementById('bar-label').textContent =
+    `${inHandBottles.toLocaleString()} in hand Â· ${holderBottles.toLocaleString()} with holders Â· ${soldBottles.toLocaleString()} sold`;
+
+  document.getElementById('stat-total').textContent = totalBottles.toLocaleString();
+  document.getElementById('stat-total-cases').textContent = s.startingCases + ' cases';
+  document.getElementById('stat-inhand').textContent = inHandBottles.toLocaleString();
+  document.getElementById('stat-inhand-cases').textContent = (inHandBottles/s.bpc).toFixed(1) + ' cases';
+  document.getElementById('stat-holders').textContent = holderBottles.toLocaleString();
+  document.getElementById('stat-holders-cases').textContent = holders.reduce((a,h)=>a+(h.cases||0),0) + ' cases';
+  document.getElementById('stat-sold').textContent = soldBottles.toLocaleString();
+  document.getElementById('stat-sold-cases').textContent = (soldBottles/s.bpc).toFixed(1) + ' cases';
+  document.getElementById('stat-revenue').textContent = fmt(revenue);
+  document.getElementById('stat-fees').textContent = fmt(fees);
+  const pe = document.getElementById('stat-profit');
+  pe.textContent = fmt(netProfit);
+  pe.className = 'text-2xl font-bold ' + (netProfit >= 0 ? 'positive' : 'negative');
+  document.getElementById('stat-unpaid').textContent = fmt(unpaid);
+  document.getElementById('stat-giving').textContent = fmt(giving);
+  document.getElementById('stat-giving-pct').textContent = s.givingPct + '% of net profit';
+
+  const tbody = document.getElementById('dash-table');
+  if (!sales.length) { tbody.innerHTML='<tr><td colspan="6" class="text-center text-slate-400 py-8">No transactions yet</td></tr>'; return; }
+  tbody.innerHTML = sales.slice(0,5).map(t => {
+    const np = (t.status==='paid'?(t.revenue||0):0) - calcCogs(t.bottles||0) - (t.fee||0);
+    const isPaid = t.status === 'paid';
+    return `<tr>
+      <td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td>
+      <td class="font-medium">${t.name||'â'}</td>
+      <td>${(t.bottles||0).toLocaleString()}</td>
+      <td class="text-green-700">${fmt(t.revenue||0)}</td>
+      <td class="${np>=0?'positive':'negative'} font-semibold">${fmt(np)}</td>
+      <td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')" title="Click to toggle">${isPaid?'Paid':'Not Paid'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// âââ Transactions âââââââââââââââââââââââââââââââââââââââââ
+window.renderTransactions = function() {
+  const filter = document.getElementById('filter-status').value;
+  const data = filter ? sales.filter(t=>t.status===filter) : sales;
+  const tbody = document.getElementById('txn-table');
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="11" class="text-center text-slate-400 py-8">No transactions found</td></tr>'; return; }
+  tbody.innerHTML = data.map(t => {
+    const cogs = calcCogs(t.bottles||0);
+    const rev = t.status==='paid' ? (t.revenue||0) : 0;
+    const np = rev - cogs - (t.fee||0);
+    const isPaid = t.status === 'paid';
+    return `<tr>
+      <td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td>
+      <td>
+        <div class="font-medium">${t.name||'â'}</div>
+        ${t.email?`<div class="text-xs text-slate-400">${t.email}</div>`:''}
+        ${t.orgtype?`<div class="text-xs text-slate-400">${t.orgtype}</div>`:''}
+      </td>
+      <td class="text-xs text-slate-500">${t.recordedBy||'â'}</td>
+      <td>${(t.bottles||0).toLocaleString()}</td>
+      <td class="text-green-700">${fmt(t.revenue||0)}</td>
+      <td class="text-red-500 text-xs">${fmt(cogs)}</td>
+      <td class="text-red-400 text-xs">${fmt(t.fee||0)}</td>
+      <td class="${np>=0?'positive':'negative'} font-semibold">${fmt(np)}</td>
+      <td class="text-xs">${t.payment||'â'}</td>
+      <td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')" title="Click to toggle">${isPaid?'Paid':'Not Paid'}</span></td>
+      <td><button class="btn-danger" onclick="deleteSale('${t.id}')">â</button></td>
+    </tr>`;
+  }).join('');
+};
+
+window.toggleStatus = async function(id, newStatus) {
+  try { await updateDoc(doc(db,'sales',id), {status: newStatus}); }
+  catch(e) { alert('Error: '+e.message); }
+};
+
+window.deleteSale = async function(id) {
+  if (!confirm('Delete this transaction? This cannot be undone.')) return;
+  try { await deleteDoc(doc(db,'sales',id)); }
+  catch(e) { alert('Error: '+e.message); }
+};
+
+// âââ P&L âââââââââââââââââââââââââââââââââââââââââââââââââ
+function renderPL() {
+  const s = getSettings();
+  const totalBottles = sales.reduce((a,t)=>a+(t.bottles||0),0);
+  const revenue = sales.filter(t=>t.status==='paid').reduce((a,t)=>a+(t.revenue||0),0);
+  const cogs = sales.reduce((a,t)=>a+calcCogs(t.bottles||0),0);
+  const fees = sales.reduce((a,t)=>a+(t.fee||0),0);
+  const np = revenue - cogs - fees;
+  const giving = np * (s.givingPct/100);
+
+  document.getElementById('pl-bottles').textContent = totalBottles.toLocaleString();
+  document.getElementById('pl-revenue').textContent = fmt(revenue);
+  document.getElementById('pl-cogs').textContent = fmt(-cogs);
+  document.getElementById('pl-fees').textContent = fmt(-fees);
+  const pe = document.getElementById('pl-profit');
+  pe.textContent = fmt(np);
+  pe.className = 'pt-3 font-bold text-right text-xl ' + (np>=0?'positive':'negative');
+  document.getElementById('pl-giving').textContent = fmt(giving);
+  document.getElementById('pl-giving-pct').textContent = s.givingPct;
+  document.getElementById('pl-giving-pct2').textContent = s.givingPct;
+
+  const tbody = document.getElementById('pl-table');
+  if (!sales.length) { tbody.innerHTML='<tr><td colspan="8" class="text-center text-slate-400 py-8">No transactions</td></tr>'; return; }
+  tbody.innerHTML = [...sales].reverse().map(t => {
+    const c = calcCogs(t.bottles||0);
+    const rev = t.status==='paid'?(t.revenue||0):0;
+    const np2 = rev - c - (t.fee||0);
+    const isPaid = t.status==='paid';
+    return `<tr>
+      <td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td>
+      <td>${t.name||'â'}</td>
+      <td>${(t.bottles||0).toLocaleString()}</td>
+      <td class="text-green-700">${fmt(t.revenue||0)}</td>
+      <td class="text-red-500">${fmt(c)}</td>
+      <td class="text-red-400">${fmt(t.fee||0)}</td>
+      <td class="${np2>=0?'positive':'negative'} font-semibold">${fmt(np2)}</td>
+      <td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')" title="Click to toggle">${isPaid?'Paid':'Not Paid'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// âââ Holders âââââââââââââââââââââââââââââââââââââââââââââ
+function renderHolders() {
+  const s = getSettings();
+  const totalCases = holders.reduce((a,h)=>a+(h.cases||0),0);
+  const totalBottles = totalCases * s.bpc;
+  document.getElementById('holders-total').textContent = totalBottles.toLocaleString();
+  document.getElementById('holders-total-cases').textContent = totalCases;
+
+  const grid = document.getElementById('holders-grid');
+  if (!holders.length) {
+    grid.innerHTML = '<div class="text-slate-400 text-sm col-span-3 py-8 text-center">No holders yet. Add someone holding inventory for you.</div>';
+    return;
+  }
+  grid.innerHTML = holders.map(h => `
+    <div class="bg-white rounded-xl shadow-sm p-4">
+      <div class="flex justify-between items-start mb-2">
+        <div class="font-semibold text-slate-700">${h.name}</div>
+        <div class="flex gap-1">
+          <button onclick="editHolder('${h.id}')" style="font-size:12px;padding:3px 8px;background:#f0f9ff;color:#0369a1;border:none;border-radius:6px;cursor:pointer;">Edit</button>
+          <button onclick="deleteHolder('${h.id}')" style="font-size:12px;padding:3px 8px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;">â</button>
+        </div>
+      </div>
+      <div class="text-3xl font-bold text-amber-500">${h.cases}</div>
+      <div class="text-xs text-slate-400 mb-2">cases (${((h.cases||0)*s.bpc).toLocaleString()} bottles)</div>
+      ${h.phone?`<div class="text-xs text-slate-500">ð ${h.phone}</div>`:''}
+      ${h.notes?`<div class="text-xs text-slate-400 mt-1 italic">${h.notes}</div>`:''}
+    </div>`).join('');
+}
+
+window.openHolderModal = function() {
+  document.getElementById('h-id').value='';
+  document.getElementById('h-name').value='';
+  document.getElementById('h-cases').value='';
+  document.getElementById('h-phone').value='';
+  document.getElementById('h-notes').value='';
+  document.getElementById('holder-modal-title').textContent='Add Holder';
+  document.getElementById('holder-error').style.display='none';
+  document.getElementById('holder-modal').style.display='flex';
+};
+
+window.closeHolderModal = function() {
+  document.getElementById('holder-modal').style.display='none';
+};
+
+window.editHolder = function(id) {
+  const h = holders.find(x=>x.id===id); if(!h) return;
+  document.getElementById('h-id').value=h.id;
+  document.getElementById('h-name').value=h.name||'';
+  document.getElementById('h-cases').value=h.cases||'';
+  document.getElementById('h-phone').value=h.phone||'';
+  document.getElementById('h-notes').value=h.notes||'';
+  document.getElementById('holder-modal-title').textContent='Edit Holder';
+  document.getElementById('holder-error').style.display='none';
+  document.getElementById('holder-modal').style.display='flex';
+};
+
+window.saveHolder = async function() {
+  const id = document.getElementById('h-id').value;
+  const name = document.getElementById('h-name').value.trim();
+  const cases = parseInt(document.getElementById('h-cases').value);
+  const errEl = document.getElementById('holder-error');
+  errEl.style.display='none';
+  if(!name){errEl.textContent='Name required';errEl.style.display='block';return;}
+  if(!cases||cases<1){errEl.textContent='Cases must be at least 1';errEl.style.display='block';return;}
+  const data = {name, cases, phone:document.getElementById('h-phone').value.trim(), notes:document.getElementById('h-notes').value.trim()};
+  try {
+    if(id){ await updateDoc(doc(db,'holders',id), data); }
+    else { await addDoc(collection(db,'holders'), {...data, createdAt:serverTimestamp()}); }
+    closeHolderModal();
+  } catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}
+};
+
+window.deleteHolder = async function(id) {
+  if(!confirm('Remove this holder?')) return;
+  try { await deleteDoc(doc(db,'holders',id)); }
+  catch(e){alert('Error: '+e.message);}
+};
+
+// âââ Record Sale ââââââââââââââââââââââââââââââââââââââââââ
+window.updatePriceFromType = function() {
+  const s = getSettings();
+  const type = document.getElementById('f-pricetype').value;
+  const bottles = parseFloat(document.getElementById('f-bottles').value)||0;
+  const revEl = document.getElementById('f-revenue');
+  const hint = document.getElementById('price-hint');
+  if(type==='retail'){
+    if(bottles>0) revEl.value=(bottles*s.retailBottle).toFixed(2);
+    hint.textContent=`@ $${s.retailBottle}/bottle`;
+    revEl.readOnly=true;
+  } else if(type==='wholesale'){
+    const cases=Math.ceil(bottles/s.bpc);
+    if(bottles>0) revEl.value=(cases*s.wholesaleCase).toFixed(2);
+    hint.textContent=`@ $${s.wholesaleCase}/case`;
+    revEl.readOnly=true;
+  } else if(type==='giveaway'){
+    revEl.value='0.00'; hint.textContent='Free'; revEl.readOnly=true;
+  } else {
+    hint.textContent=''; revEl.readOnly=false;
+  }
+  updateCogsPreview();
+};
+
+window.updateCogsPreview = function() {
+  const bottles=parseFloat(document.getElementById('f-bottles').value)||0;
+  const revenue=parseFloat(document.getElementById('f-revenue').value)||0;
+  const fee=parseFloat(document.getElementById('f-fee').value)||0;
+  if(!bottles){document.getElementById('cogs-preview').textContent='Fill in bottles and revenue to see profit estimate.';return;}
+  const cogs=calcCogs(bottles);
+  const np=revenue-cogs-fee;
+  document.getElementById('cogs-preview').innerHTML=
+    `COGS: <strong>${fmt(cogs)}</strong> &nbsp;|&nbsp; Revenue: <strong>${fmt(revenue)}</strong> &nbsp;|&nbsp; Fee: <strong>${fmt(fee)}</strong> &nbsp;|&nbsp; Net Profit: <strong class="${np>=0?'positive':'negative'}">${fmt(np)}</strong>`;
+};
+
+window.submitSale = async function() {
+  const name = document.getElementById('f-name').value.trim();
+  const by = document.getElementById('f-by').value.trim();
+  const bottles = parseInt(document.getElementById('f-bottles').value);
+  const revenue = parseFloat(document.getElementById('f-revenue').value)||0;
+  const errEl = document.getElementById('form-error');
+  const okEl = document.getElementById('form-success');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!name){errEl.textContent='Name is required.';errEl.style.display='block';return;}
+  if(!by){errEl.textContent='"Recorded By" is required.';errEl.style.display='block';return;}
+  if(!bottles||bottles<1){errEl.textContent='Bottles must be at least 1.';errEl.style.display='block';return;}
+  const data = {
+    name, recordedBy:by,
+    email:document.getElementById('f-email').value.trim(),
+    phone:document.getElementById('f-phone').value.trim(),
+    address:document.getElementById('f-address').value.trim(),
+    orgtype:document.getElementById('f-orgtype').value,
+    priceType:document.getElementById('f-pricetype').value,
+    bottles, revenue,
+    fee:parseFloat(document.getElementById('f-fee').value)||0,
+    payment:document.getElementById('f-payment').value,
+    status:document.getElementById('f-status').value,
+    notes:document.getElementById('f-notes').value.trim(),
+    createdAt:serverTimestamp()
+  };
+  try {
+    await addDoc(collection(db,'sales'), data);
+    okEl.textContent='Transaction saved!'; okEl.style.display='block';
+    clearForm();
+    setTimeout(()=>okEl.style.display='none',3000);
+  } catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}
+};
+
+window.clearForm = function() {
+  ['f-name','f-by','f-email','f-phone','f-address','f-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-orgtype').value='';
+  document.getElementById('f-pricetype').value='retail';
+  document.getElementById('f-bottles').value='';
+  document.getElementById('f-revenue').value='';
+  document.getElementById('f-fee').value='0';
+  document.getElementById('f-payment').value='';
+  document.getElementById('f-status').value='paid';
+  document.getElementById('f-revenue').readOnly=false;
+  document.getElementById('price-hint').textContent='';
+  document.getElementById('cogs-preview').textContent='Fill in bottles and revenue to see profit estimate.';
+};
+
+// âââ Tabs âââââââââââââââââââââââââââââââââââââââââââââââââ
+window.showTab = function(name, btn) {
+  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+};
+
+// init
+loadSettingsUI();
+</script>
 </body>
 </html>
