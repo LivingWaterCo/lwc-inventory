@@ -221,7 +221,10 @@
   <div id="tab-expenses" class="section">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-bold text-slate-700">Business Expenses</h2>
+      <div class="flex gap-2">
       <button class="btn-primary text-sm" onclick="openExpenseModal('')">+ Add Expense</button>
+      <button onclick="openImportModal()" style="padding:8px 16px;border-radius:8px;background:white;color:#0369a1;border:1px solid #bae6fd;font-weight:600;font-size:14px;cursor:pointer;">Import from Spreadsheet</button>
+    </div>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6" id="expense-totals">
       <div class="stat-card"><div class="text-xs text-slate-400 mb-1">Loading...</div></div>
@@ -466,6 +469,40 @@
   </div>
 </div>
 
+
+<!-- Import Expenses Modal -->
+<div id="import-modal" class="modal-overlay">
+  <div class="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 my-6 shadow-xl">
+    <h3 class="font-bold text-slate-700 mb-2">Import Expenses from Spreadsheet</h3>
+    <p class="text-sm text-slate-500 mb-4">Copy cells from Excel or Google Sheets and paste below. Columns should be in this order:<br/>
+      <span class="font-semibold text-slate-700">Date &nbsp;|&nbsp; Category &nbsp;|&nbsp; Description &nbsp;|&nbsp; Amount &nbsp;|&nbsp; Recorded By</span><br/>
+      <span class="text-xs text-slate-400 mt-1 block">Valid categories: Shipping, Bottle Cost, Subscriptions, Mileage, Supplies, Other. Anything else becomes "Other".</span>
+    </p>
+    <div id="import-step-paste">
+      <label class="form-label">Paste your data here (tab-separated from spreadsheet)</label>
+      <textarea id="import-paste" rows="8" style="font-family:monospace;font-size:12px;resize:vertical;" placeholder="2026-07-01&#9;Shipping&#9;USPS boxes&#9;24.50&#9;Cole&#10;2026-07-05&#9;Supplies&#9;Label printer ink&#9;18.99&#9;Jett"></textarea>
+      <div class="flex gap-3 mt-4">
+        <button class="btn-primary" onclick="parseImport()">Preview Import</button>
+        <button onclick="closeImportModal()" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Cancel</button>
+      </div>
+      <div id="import-parse-error" class="mt-2 text-red-500 text-sm" style="display:none;"></div>
+    </div>
+    <div id="import-step-preview" style="display:none;">
+      <div class="text-sm font-semibold text-slate-600 mb-2" id="import-preview-count"></div>
+      <div class="overflow-x-auto max-h-64 overflow-y-auto border border-slate-200 rounded-lg mb-4">
+        <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Recorded By</th><th>Status</th></tr></thead>
+        <tbody id="import-preview-table"></tbody></table>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-primary" onclick="confirmImport()" id="import-confirm-btn">Import All</button>
+        <button onclick="document.getElementById('import-step-preview').style.display='none';document.getElementById('import-step-paste').style.display='block';" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Back</button>
+        <button onclick="closeImportModal()" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Cancel</button>
+      </div>
+      <div id="import-progress" class="mt-3 text-sm text-sky-600" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -545,6 +582,105 @@ window.closeTaskModal=function(){document.getElementById('task-modal').style.dis
 window.saveTask=async function(){const id=document.getElementById('task-id').value;const title=document.getElementById('task-title').value.trim();const assignee=document.getElementById('task-assignee').value.trim();const errEl=document.getElementById('task-error');errEl.style.display='none';if(!title){errEl.textContent='Title is required.';errEl.style.display='block';return;}if(!assignee){errEl.textContent='"Assigned To" is required.';errEl.style.display='block';return;}const data={title,assignedTo:assignee,dueDate:document.getElementById('task-due').value||null,priority:document.getElementById('task-priority').value,status:document.getElementById('task-status').value,notes:document.getElementById('task-notes').value.trim(),updatedAt:serverTimestamp()};localStorage.setItem('lwc_lastBy',assignee);try{if(id){await updateDoc(doc(db,'tasks',id),data);}else{await addDoc(collection(db,'tasks'),{...data,createdAt:serverTimestamp()});}closeTaskModal();}catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}};
 window.cycleTaskStatus=async function(id,newStatus){try{await updateDoc(doc(db,'tasks',id),{status:newStatus,updatedAt:serverTimestamp()});}catch(e){alert('Error: '+e.message);}};
 window.deleteTask=async function(id){if(!confirm('Delete this task?'))return;try{await deleteDoc(doc(db,'tasks',id));}catch(e){alert('Error: '+e.message);}};
+
+
+// ─── Expense Import ────────────────────────────────────────
+let importRows = [];
+const VALID_CATS = ['Shipping','Bottle Cost','Subscriptions','Mileage','Supplies','Other'];
+
+window.openImportModal = function() {
+  document.getElementById('import-paste').value = '';
+  document.getElementById('import-parse-error').style.display = 'none';
+  document.getElementById('import-step-paste').style.display = 'block';
+  document.getElementById('import-step-preview').style.display = 'none';
+  document.getElementById('import-modal').style.display = 'flex';
+};
+window.closeImportModal = function() {
+  document.getElementById('import-modal').style.display = 'none';
+};
+
+window.parseImport = function() {
+  const raw = document.getElementById('import-paste').value.trim();
+  const errEl = document.getElementById('import-parse-error');
+  errEl.style.display = 'none';
+  if(!raw) { errEl.textContent = 'Please paste some data first.'; errEl.style.display = 'block'; return; }
+  const lines = raw.split(/\r?\n/).filter(l => l.trim());
+  importRows = [];
+  const warnings = [];
+  for(let i = 0; i < lines.length; i++) {
+    const cols = lines[i].split('\t');
+    if(cols.length < 2) { warnings.push(`Row ${i+1}: not enough columns, skipped`); continue; }
+    const rawDate = (cols[0]||'').trim();
+    const rawCat = (cols[1]||'').trim();
+    const desc = (cols[2]||'').trim();
+    const rawAmt = (cols[3]||'').trim().replace(/[$,]/g,'');
+    const by = (cols[4]||'').trim();
+    // Parse date
+    let date = '';
+    const d = new Date(rawDate);
+    if(!isNaN(d.getTime())) {
+      date = d.toISOString().split('T')[0];
+    } else {
+      warnings.push(`Row ${i+1}: unrecognized date "${rawDate}", defaulting to today`);
+      date = new Date().toISOString().split('T')[0];
+    }
+    // Validate category
+    const cat = VALID_CATS.find(c => c.toLowerCase() === rawCat.toLowerCase()) || 'Other';
+    if(cat === 'Other' && rawCat && rawCat.toLowerCase() !== 'other') {
+      warnings.push(`Row ${i+1}: category "${rawCat}" not recognized, using "Other"`);
+    }
+    // Parse amount
+    const amount = parseFloat(rawAmt);
+    if(isNaN(amount) || amount < 0) { warnings.push(`Row ${i+1}: invalid amount "${rawAmt}", skipped`); continue; }
+    importRows.push({ date, category: cat, description: desc, amount, recordedBy: by || 'Import', notes: '' });
+  }
+  if(!importRows.length) {
+    errEl.textContent = 'No valid rows found. Check your data format.';
+    if(warnings.length) errEl.textContent += ' Warnings: ' + warnings.join('; ');
+    errEl.style.display = 'block';
+    return;
+  }
+  // Show preview
+  document.getElementById('import-preview-count').textContent =
+    `${importRows.length} expense${importRows.length>1?'s':''} ready to import${warnings.length?' ('+warnings.length+' warning'+(warnings.length>1?'s':'')+')':''}`;
+  const tbody = document.getElementById('import-preview-table');
+  tbody.innerHTML = importRows.map(r =>
+    `<tr><td class="text-xs">${r.date}</td><td><span class="cat-chip">${r.category}</span></td>` +
+    `<td class="text-xs">${r.description||'-'}</td><td class="text-red-600 font-semibold">${fmt(r.amount)}</td>` +
+    `<td class="text-xs">${r.recordedBy}</td><td class="text-xs text-green-600">Ready</td></tr>`
+  ).join('');
+  if(warnings.length) {
+    const warnDiv = document.createElement('div');
+    warnDiv.className = 'mt-2 text-xs text-amber-600';
+    warnDiv.textContent = 'Warnings: ' + warnings.join(' | ');
+    document.getElementById('import-preview-table').parentElement.after(warnDiv);
+  }
+  document.getElementById('import-step-paste').style.display = 'none';
+  document.getElementById('import-step-preview').style.display = 'block';
+};
+
+window.confirmImport = async function() {
+  const btn = document.getElementById('import-confirm-btn');
+  const prog = document.getElementById('import-progress');
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+  prog.style.display = 'block';
+  let done = 0;
+  for(const row of importRows) {
+    try {
+      await addDoc(collection(db,'expenses'), {...row, createdAt: serverTimestamp()});
+      done++;
+      prog.textContent = `Imported ${done} of ${importRows.length}...`;
+    } catch(e) {
+      prog.textContent = `Error on row ${done+1}: ${e.message}`;
+      btn.disabled = false; btn.textContent = 'Import All';
+      return;
+    }
+  }
+  prog.textContent = `Done! ${done} expenses imported.`;
+  prog.className = 'mt-3 text-sm text-green-600';
+  setTimeout(() => { closeImportModal(); }, 1500);
+};
 
 window.showTab=function(name,btn){document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');if(name==='financials')renderFinancials();};
 
