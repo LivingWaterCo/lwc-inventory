@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Living Water Co — Inventory</title>
+<title>Living Water Co</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body { font-family: 'Segoe UI', sans-serif; background: #f0f9ff; }
@@ -17,8 +17,14 @@
   tr:hover td { background: #f8fafc; }
   .badge-paid { background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; }
   .badge-unpaid { background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; }
+  .badge-open { background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .badge-inprogress { background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .badge-done { background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .badge-high { background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:999px; font-size:11px; font-weight:600; }
+  .badge-medium { background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:999px; font-size:11px; font-weight:600; }
+  .badge-low { background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:999px; font-size:11px; font-weight:600; }
   input, select, textarea { border: 1px solid #cbd5e1; border-radius:8px; padding:8px 12px; width:100%; font-size:14px; outline:none; background:white; }
-  input:focus, select:focus { border-color:#0ea5e9; box-shadow:0 0 0 3px #bae6fd55; }
+  input:focus, select:focus, textarea:focus { border-color:#0ea5e9; box-shadow:0 0 0 3px #bae6fd55; }
   .btn-primary { background:#0ea5e9; color:white; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; border:none; }
   .btn-primary:hover { background:#0284c7; }
   .btn-danger { background:#fee2e2; color:#dc2626; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; border:none; }
@@ -30,37 +36,40 @@
   .giving-box { background:linear-gradient(135deg,#d1fae5,#a7f3d0); border:1px solid #6ee7b7; border-radius:12px; padding:20px; }
   .negative { color:#dc2626; }
   .positive { color:#16a34a; }
+  .task-card { background:white; border-radius:10px; padding:14px 16px; box-shadow:0 1px 3px rgba(0,0,0,.08); border-left:4px solid #e2e8f0; margin-bottom:10px; }
+  .task-card.priority-high { border-left-color:#ef4444; }
+  .task-card.priority-medium { border-left-color:#f59e0b; }
+  .task-card.priority-low { border-left-color:#94a3b8; }
+  .task-card.status-done { opacity:.6; }
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; align-items:center; justify-content:center; overflow-y:auto; }
+  .cat-chip { background:#f1f5f9; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; color:#475569; }
 </style>
 </head>
 <body>
-
 <div class="max-w-6xl mx-auto px-4 py-6">
-
-  <!-- Header -->
   <div class="flex items-center justify-between mb-6">
     <div>
       <h1 class="text-2xl font-bold text-sky-800">Living Water Co</h1>
-      <p class="text-sm text-slate-500">Inventory Management</p>
+      <p class="text-sm text-slate-500">Business Suite</p>
     </div>
     <div class="text-right text-sm text-slate-500">
       <span class="inline-block w-2 h-2 bg-green-400 rounded-full mr-1"></span>Live
     </div>
   </div>
-
-  <!-- Tabs -->
   <div class="flex gap-2 flex-wrap mb-6">
     <button class="tab-btn active px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('dashboard',this)">Dashboard</button>
     <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('record',this)">Record Sale</button>
     <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('transactions',this)">Transactions</button>
     <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('holding',this)">Holding</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('profits',this)">Profits</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('profits',this)">Sales P&amp;L</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('expenses',this)">Expenses</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('financials',this)">Financials</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('tasks',this)">Tasks</button>
     <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm" onclick="showTab('settings',this)">Settings</button>
   </div>
 
-  <!-- ======================== DASHBOARD ======================== -->
+  <!-- DASHBOARD -->
   <div id="tab-dashboard" class="section active">
-
-    <!-- Inventory Bar -->
     <div class="bg-white rounded-xl p-4 mb-6 shadow-sm">
       <div class="flex justify-between text-sm text-slate-600 mb-2">
         <span class="font-semibold">Inventory Overview</span>
@@ -77,72 +86,31 @@
         <span><span class="inline-block w-3 h-3 rounded-sm bg-slate-300 mr-1"></span>Sold</span>
       </div>
     </div>
-
-    <!-- Stats Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="stat-card">
-        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Total Received</div>
-        <div class="text-2xl font-bold text-slate-800" id="stat-total">—</div>
-        <div class="text-xs text-slate-400" id="stat-total-cases">— cases</div>
-      </div>
-      <div class="stat-card">
-        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">In Hand</div>
-        <div class="text-2xl font-bold text-sky-600" id="stat-inhand">—</div>
-        <div class="text-xs text-slate-400" id="stat-inhand-cases">— cases</div>
-      </div>
-      <div class="stat-card">
-        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">With Holders</div>
-        <div class="text-2xl font-bold text-amber-500" id="stat-holders">—</div>
-        <div class="text-xs text-slate-400" id="stat-holders-cases">— cases</div>
-      </div>
-      <div class="stat-card">
-        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Sold</div>
-        <div class="text-2xl font-bold text-slate-500" id="stat-sold">—</div>
-        <div class="text-xs text-slate-400" id="stat-sold-cases">— cases</div>
-      </div>
-      <div class="stat-card">
-        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Revenue (Paid)</div>
-        <div class="text-2xl font-bold text-green-600" id="stat-revenue">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Proc. Fees</div>
-        <div class="text-2xl font-bold text-red-400" id="stat-fees">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Net Profit</div>
-        <div class="text-2xl font-bold" id="stat-profit">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Unpaid (Owed)</div>
-        <div class="text-2xl font-bold text-orange-500" id="stat-unpaid">—</div>
-      </div>
+      <div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Total Received</div><div class="text-2xl font-bold text-slate-800" id="stat-total">-</div><div class="text-xs text-slate-400" id="stat-total-cases">- cases</div></div>
+      <div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1">In Hand</div><div class="text-2xl font-bold text-sky-600" id="stat-inhand">-</div><div class="text-xs text-slate-400" id="stat-inhand-cases">- cases</div></div>
+      <div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1">With Holders</div><div class="text-2xl font-bold text-amber-500" id="stat-holders">-</div><div class="text-xs text-slate-400" id="stat-holders-cases">- cases</div></div>
+      <div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Sold</div><div class="text-2xl font-bold text-slate-500" id="stat-sold">-</div><div class="text-xs text-slate-400" id="stat-sold-cases">- cases</div></div>
+      <div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Revenue (Paid)</div><div class="text-2xl font-bold text-green-600" id="stat-revenue">-</div></div>
+      <div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Proc. Fees</div><div class="text-2xl font-bold text-red-400" id="stat-fees">-</div></div>
+      <div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Net Profit</div><div class="text-2xl font-bold" id="stat-profit">-</div></div>
+      <div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Unpaid (Owed)</div><div class="text-2xl font-bold text-orange-500" id="stat-unpaid">-</div></div>
     </div>
-
-    <!-- Giving Box -->
     <div class="giving-box mb-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="text-sm font-semibold text-emerald-800 mb-1">Set Aside for Giving</div>
-          <div class="text-3xl font-bold text-emerald-700" id="stat-giving">—</div>
-          <div class="text-xs text-emerald-600 mt-1" id="stat-giving-pct">10% of net profit</div>
-        </div>
-        
-      </div>
+      <div class="text-sm font-semibold text-emerald-800 mb-1">Set Aside for Giving</div>
+      <div class="text-3xl font-bold text-emerald-700" id="stat-giving">-</div>
+      <div class="text-xs text-emerald-600 mt-1" id="stat-giving-pct">10% of net profit</div>
     </div>
-
-    <!-- Recent -->
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <div class="p-4 border-b border-slate-100 font-semibold text-slate-700">Recent Transactions</div>
       <div class="overflow-x-auto">
-        <table>
-          <thead><tr><th>Date</th><th>Name</th><th>Bottles</th><th>Revenue</th><th>Net Profit</th><th>Status</th></tr></thead>
-          <tbody id="dash-table"><tr><td colspan="6" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody>
-        </table>
+        <table><thead><tr><th>Date</th><th>Name</th><th>Bottles</th><th>Revenue</th><th>Net Profit</th><th>Status</th></tr></thead>
+        <tbody id="dash-table"><tr><td colspan="6" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody></table>
       </div>
     </div>
   </div>
 
-  <!-- ======================== RECORD SALE ======================== -->
+  <!-- RECORD SALE -->
   <div id="tab-record" class="section">
     <div class="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
       <h2 class="text-lg font-bold text-slate-700 mb-4">Record a Sale</h2>
@@ -152,55 +120,31 @@
         <div><label class="form-label">Email</label><input id="f-email" type="email" placeholder="email@example.com"/></div>
         <div><label class="form-label">Phone</label><input id="f-phone" type="tel" placeholder="(555) 000-0000"/></div>
         <div><label class="form-label">Address</label><input id="f-address" type="text" placeholder="123 Main St, City, State"/></div>
-        <div>
-          <label class="form-label">Organization Type</label>
-          <select id="f-orgtype">
-            <option value="">— Select —</option>
-            <option>Individual</option><option>Church</option><option>Business</option><option>Nonprofit</option><option>Other</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label">Price Type</label>
+        <div><label class="form-label">Organization Type</label>
+          <select id="f-orgtype"><option value="">- Select -</option><option>Individual</option><option>Church</option><option>Business</option><option>Nonprofit</option><option>Other</option></select></div>
+        <div><label class="form-label">Price Type</label>
           <select id="f-pricetype" onchange="updatePriceFromType()">
-            <option value="retail">Retail ($3.00/bottle)</option>
-            <option value="wholesale">Wholesale ($49.99/case)</option>
-            <option value="custom">Custom Price</option>
-            <option value="giveaway">Giveaway ($0)</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label">Quantity *</label>
-          <div style="display:flex;gap:8px;align-items:stretch;">
-            <select id="f-unit" onchange="updatePriceFromType()" style="width:auto;flex-shrink:0;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:white;outline:none;">
-              <option value="bottles">Bottles</option>
-              <option value="cases">Cases</option>
-            </select>
-            <input id="f-qty" type="number" min="1" placeholder="1" oninput="updatePriceFromType()" style="flex:1;"/>
-          </div>
-          <div class="text-xs text-slate-400 mt-1" id="qty-hint"></div>
-        </div>
-        <div>
-          <label class="form-label">Revenue ($) <span id="price-hint" class="font-normal text-slate-400 text-xs"></span></label>
-          <input id="f-revenue" type="number" step="0.01" min="0" placeholder="0.00" oninput="updateFeeFromPayment();updateCogsPreview()"/>
-        </div>
+            <option value="retail">Retail ($3.00/bottle)</option><option value="wholesale">Wholesale ($49.99/case)</option>
+            <option value="custom">Custom Price</option><option value="giveaway">Giveaway ($0)</option></select></div>
+        <div><label class="form-label">Quantity *</label>
+          <div style="display:flex;gap:8px;">
+            <select id="f-unit" onchange="updatePriceFromType()" style="width:auto;flex-shrink:0;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:white;">
+              <option value="bottles">Bottles</option><option value="cases">Cases</option></select>
+            <input id="f-qty" type="number" min="1" placeholder="1" oninput="updatePriceFromType()" style="flex:1;"/></div>
+          <div class="text-xs text-slate-400 mt-1" id="qty-hint"></div></div>
+        <div><label class="form-label">Revenue ($) <span id="price-hint" class="font-normal text-slate-400 text-xs"></span></label>
+          <input id="f-revenue" type="number" step="0.01" min="0" placeholder="0.00" oninput="updateFeeFromPayment();updateCogsPreview()"/></div>
         <div><label class="form-label">Processing Fee ($)</label><input id="f-fee" type="number" step="0.01" min="0" placeholder="0.00" value="0" oninput="updateCogsPreview()"/></div>
-        <div>
-          <label class="form-label">Payment Method</label>
+        <div><label class="form-label">Payment Method</label>
           <select id="f-payment" onchange="updateFeeFromPayment();updateCogsPreview()">
-            <option value="">— Select —</option>
-            <option>Cash</option><option>Check</option><option>Venmo</option><option>Zelle</option><option>PayPal</option><option>Card</option><option>Other</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label">Status</label>
-          <select id="f-status"><option value="paid">Paid</option><option value="unpaid">Not Paid</option></select>
-        </div>
-        <div class="md:col-span-2">
-          <label class="form-label">Notes</label>
-          <textarea id="f-notes" rows="2" style="height:auto;resize:vertical;" placeholder="Any additional notes..."></textarea>
-        </div>
+            <option value="">- Select -</option><option>Cash</option><option>Check</option><option>Venmo</option>
+            <option>Zelle</option><option>PayPal</option><option>Card</option><option>Other</option></select></div>
+        <div><label class="form-label">Status</label>
+          <select id="f-status"><option value="paid">Paid</option><option value="unpaid">Not Paid</option></select></div>
+        <div class="md:col-span-2"><label class="form-label">Notes</label>
+          <textarea id="f-notes" rows="2" style="height:auto;resize:vertical;" placeholder="Any additional notes..."></textarea></div>
       </div>
-      <div id="cogs-preview" class="mt-4 p-3 bg-slate-50 rounded-lg text-sm text-slate-600">Fill in bottles and revenue to see profit estimate.</div>
+      <div id="cogs-preview" class="mt-4 p-3 bg-slate-50 rounded-lg text-sm text-slate-600">Fill in quantity and revenue to see profit estimate.</div>
       <div class="mt-5 flex gap-3">
         <button class="btn-primary" onclick="submitSale()">Save Transaction</button>
         <button onclick="clearForm()" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Clear</button>
@@ -210,27 +154,22 @@
     </div>
   </div>
 
-  <!-- ======================== TRANSACTIONS ======================== -->
+  <!-- TRANSACTIONS -->
   <div id="tab-transactions" class="section">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-bold text-slate-700">All Transactions</h2>
       <select id="filter-status" onchange="renderTransactions()" style="width:auto;padding:6px 10px;font-size:13px;">
-        <option value="">All Status</option><option value="paid">Paid</option><option value="unpaid">Not Paid</option>
-      </select>
+        <option value="">All Status</option><option value="paid">Paid</option><option value="unpaid">Not Paid</option></select>
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
-        <table>
-          <thead>
-            <tr><th>Date</th><th>Name</th><th>By</th><th>Btls</th><th>Revenue</th><th>COGS</th><th>Fee</th><th>Net Profit</th><th>Payment</th><th>Status</th><th></th></tr>
-          </thead>
-          <tbody id="txn-table"><tr><td colspan="11" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody>
-        </table>
+        <table><thead><tr><th>Date</th><th>Name</th><th>By</th><th>Btls</th><th>Revenue</th><th>COGS</th><th>Fee</th><th>Net Profit</th><th>Payment</th><th>Status</th><th></th></tr></thead>
+        <tbody id="txn-table"><tr><td colspan="11" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody></table>
       </div>
     </div>
   </div>
 
-  <!-- ======================== HOLDING ======================== -->
+  <!-- HOLDING -->
   <div id="tab-holding" class="section">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-bold text-slate-700">Inventory Holders</h2>
@@ -241,66 +180,175 @@
       <div class="text-slate-400 text-sm col-span-3 py-8 text-center">Loading...</div>
     </div>
     <div class="mt-4 p-3 bg-sky-50 border border-sky-200 rounded-lg text-sm text-sky-700">
-      <strong>Total with holders:</strong> <span id="holders-total">—</span> bottles (<span id="holders-total-cases">—</span> cases)
+      <strong>Total with holders:</strong> <span id="holders-total">-</span> bottles (<span id="holders-total-cases">-</span> cases)
     </div>
   </div>
 
-  <!-- ======================== PROFITS ======================== -->
+  <!-- SALES P&L -->
   <div id="tab-profits" class="section">
-    <h2 class="text-lg font-bold text-slate-700 mb-4">P&amp;L Summary</h2>
+    <h2 class="text-lg font-bold text-slate-700 mb-4">Sales P&amp;L</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
       <div class="bg-white rounded-xl shadow-sm p-5">
-        <h3 class="font-semibold text-slate-600 mb-3">Overall Totals</h3>
+        <h3 class="font-semibold text-slate-600 mb-3">Overall Totals (Sales Only)</h3>
         <table style="font-size:14px;">
-          <tr><td class="py-1 text-slate-500 pr-8">Bottles Sold</td><td class="py-1 font-semibold text-right" id="pl-bottles">—</td></tr>
-          <tr><td class="py-1 text-slate-500">Revenue (Paid)</td><td class="py-1 font-semibold text-green-600 text-right" id="pl-revenue">—</td></tr>
-          <tr><td class="py-1 text-slate-500">COGS</td><td class="py-1 font-semibold text-red-500 text-right" id="pl-cogs">—</td></tr>
-          <tr><td class="py-1 text-slate-500">Processing Fees</td><td class="py-1 font-semibold text-red-400 text-right" id="pl-fees">—</td></tr>
-          <tr style="border-top:2px solid #e2e8f0;">
-            <td class="pt-3 font-bold text-slate-700">Net Profit</td>
-            <td class="pt-3 font-bold text-right text-xl" id="pl-profit">—</td>
-          </tr>
+          <tr><td class="py-1 text-slate-500 pr-8">Bottles Sold</td><td class="py-1 font-semibold text-right" id="pl-bottles">-</td></tr>
+          <tr><td class="py-1 text-slate-500">Revenue (Paid)</td><td class="py-1 font-semibold text-green-600 text-right" id="pl-revenue">-</td></tr>
+          <tr><td class="py-1 text-slate-500">COGS</td><td class="py-1 font-semibold text-red-500 text-right" id="pl-cogs">-</td></tr>
+          <tr><td class="py-1 text-slate-500">Processing Fees</td><td class="py-1 font-semibold text-red-400 text-right" id="pl-fees">-</td></tr>
+          <tr style="border-top:2px solid #e2e8f0;"><td class="pt-3 font-bold text-slate-700">Net Profit</td><td class="pt-3 font-bold text-right text-xl" id="pl-profit">-</td></tr>
         </table>
+        <div class="mt-3 text-xs text-slate-400">Does not include business expenses. See Financials tab for full P&amp;L.</div>
       </div>
       <div class="giving-box flex flex-col justify-between">
         <div>
           <h3 class="font-semibold text-emerald-800 mb-1">Giving (<span id="pl-giving-pct">10</span>%)</h3>
-          <div class="text-4xl font-bold text-emerald-700 mt-2" id="pl-giving">—</div>
+          <div class="text-4xl font-bold text-emerald-700 mt-2" id="pl-giving">-</div>
           <div class="text-sm text-emerald-600 mt-2">Set aside from net profit</div>
         </div>
-        <div class="mt-4 text-xs text-emerald-700 bg-white bg-opacity-50 rounded-lg p-2">
-          Net Profit × <span id="pl-giving-pct2">10</span>% = Giving amount
-        </div>
+        <div class="mt-4 text-xs text-emerald-700 bg-white bg-opacity-50 rounded-lg p-2">Net Profit x <span id="pl-giving-pct2">10</span>% = Giving amount</div>
       </div>
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <div class="p-4 border-b border-slate-100 font-semibold text-slate-600">Per-Transaction P&amp;L</div>
       <div class="overflow-x-auto">
-        <table>
-          <thead><tr><th>Date</th><th>Name</th><th>Bottles</th><th>Revenue</th><th>COGS</th><th>Proc. Fee</th><th>Net Profit</th><th>Status</th></tr></thead>
-          <tbody id="pl-table"><tr><td colspan="8" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody>
-        </table>
+        <table><thead><tr><th>Date</th><th>Name</th><th>Bottles</th><th>Revenue</th><th>COGS</th><th>Proc. Fee</th><th>Net Profit</th><th>Status</th></tr></thead>
+        <tbody id="pl-table"><tr><td colspan="8" class="text-center text-slate-400 py-8">Loading...</td></tr></tbody></table>
       </div>
     </div>
   </div>
 
-  <!-- ======================== SETTINGS ======================== -->
+  <!-- EXPENSES -->
+  <div id="tab-expenses" class="section">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-slate-700">Business Expenses</h2>
+      <button class="btn-primary text-sm" onclick="openExpenseModal('')">+ Add Expense</button>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6" id="expense-totals">
+      <div class="stat-card"><div class="text-xs text-slate-400 mb-1">Loading...</div></div>
+    </div>
+    <div class="flex gap-3 mb-4 flex-wrap items-center">
+      <select id="exp-filter-cat" onchange="renderExpenses()" style="width:auto;padding:6px 10px;font-size:13px;">
+        <option value="">All Categories</option>
+        <option>Shipping</option><option>Bottle Cost</option><option>Subscriptions</option>
+        <option>Mileage</option><option>Supplies</option><option>Other</option>
+      </select>
+      <select id="exp-filter-month" onchange="renderExpenses()" style="width:auto;padding:6px 10px;font-size:13px;">
+        <option value="">All Time</option>
+      </select>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Miles</th><th>Recorded By</th><th></th></tr></thead>
+        <tbody id="exp-table"><tr><td colspan="7" class="text-center text-slate-400 py-8">No expenses yet</td></tr></tbody></table>
+      </div>
+    </div>
+    <div class="mt-4 bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+      <span class="text-sm font-semibold text-slate-600">Filtered Total</span>
+      <span class="text-xl font-bold text-red-500" id="exp-total-display">$0.00</span>
+    </div>
+  </div>
+
+  <!-- FINANCIALS -->
+  <div id="tab-financials" class="section">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-bold text-slate-700">Full Financials &amp; Tax Estimate</h2>
+      <div class="flex gap-3">
+        <select id="fin-filter-year" onchange="renderFinancials()" style="width:auto;padding:6px 10px;font-size:13px;"><option value="">All Time</option></select>
+        <select id="fin-filter-quarter" onchange="renderFinancials()" style="width:auto;padding:6px 10px;font-size:13px;">
+          <option value="">Full Year</option><option value="1">Q1 (Jan-Mar)</option>
+          <option value="2">Q2 (Apr-Jun)</option><option value="3">Q3 (Jul-Sep)</option><option value="4">Q4 (Oct-Dec)</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <h3 class="font-semibold text-slate-600 mb-4 pb-2 border-b">Income Statement</h3>
+        <table style="font-size:14px;">
+          <tr><td class="py-1 text-xs text-slate-400 font-semibold uppercase tracking-wide" colspan="2">Revenue</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3 pr-8">Gross Revenue (Paid)</td><td class="py-1 text-green-600 font-semibold text-right" id="fin-revenue">-</td></tr>
+          <tr><td class="pt-2 pb-1 text-xs text-slate-400 font-semibold uppercase tracking-wide" colspan="2">Cost of Goods Sold</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3">Product COGS</td><td class="py-1 text-red-500 text-right" id="fin-cogs">-</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3">Processing Fees</td><td class="py-1 text-red-500 text-right" id="fin-fees">-</td></tr>
+          <tr style="border-top:1px solid #e2e8f0;"><td class="py-2 font-semibold text-slate-700 pl-3">Gross Profit</td><td class="py-2 font-semibold text-right" id="fin-gross-profit">-</td></tr>
+          <tr><td class="pt-2 pb-1 text-xs text-slate-400 font-semibold uppercase tracking-wide" colspan="2">Business Expenses</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3">Shipping</td><td class="py-1 text-red-500 text-right" id="fin-exp-shipping">$0.00</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3">Bottle Cost</td><td class="py-1 text-red-500 text-right" id="fin-exp-bottle">$0.00</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3">Subscriptions</td><td class="py-1 text-red-500 text-right" id="fin-exp-subscriptions">$0.00</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3">Mileage</td><td class="py-1 text-red-500 text-right" id="fin-exp-mileage">$0.00</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3">Supplies</td><td class="py-1 text-red-500 text-right" id="fin-exp-supplies">$0.00</td></tr>
+          <tr><td class="py-1 text-slate-500 pl-3">Other</td><td class="py-1 text-red-500 text-right" id="fin-exp-other">$0.00</td></tr>
+          <tr style="border-top:1px solid #e2e8f0;"><td class="py-1 text-slate-600 font-semibold pl-3">Total Expenses</td><td class="py-1 text-red-600 font-semibold text-right" id="fin-total-expenses">$0.00</td></tr>
+          <tr style="border-top:2px solid #334155;"><td class="pt-3 font-bold text-slate-800 text-base">NET PROFIT</td><td class="pt-3 font-bold text-right text-xl" id="fin-net-profit">-</td></tr>
+          <tr><td class="py-1 text-slate-400 text-xs">Giving (<span id="fin-giving-pct">10</span>%)</td><td class="py-1 text-emerald-600 font-semibold text-right text-sm" id="fin-giving">-</td></tr>
+        </table>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <h3 class="font-semibold text-amber-800 mb-1">LLC Tax Estimate</h3>
+          <div class="text-xs text-amber-600 mb-4">Multi-member LLC (partnership), pass-through. Estimate only - consult your CPA.</div>
+          <table style="font-size:14px;">
+            <tr><td class="py-1 text-amber-700 pr-8">Net Profit</td><td class="py-1 font-semibold text-right" id="tax-net">-</td></tr>
+            <tr><td class="py-1 text-amber-700">SE Income (x92.35%)</td><td class="py-1 font-semibold text-right" id="tax-se-income">-</td></tr>
+            <tr><td class="py-1 text-amber-700">SE Tax (15.3%)</td><td class="py-1 font-semibold text-red-600 text-right" id="tax-se-total">-</td></tr>
+            <tr style="border-top:1px solid #fde68a;"><td class="pt-3 font-bold text-amber-900">Est. Quarterly Payment</td><td class="pt-3 font-bold text-right text-xl text-amber-800" id="tax-quarterly">-</td></tr>
+          </table>
+          <div class="mt-3 text-xs text-amber-600">SE tax only. Federal + state income tax may also apply.</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-5">
+          <h3 class="font-semibold text-slate-600 mb-1">Per-Member Estimate (50/50)</h3>
+          <div class="text-xs text-slate-400 mb-3">Equal split between LLC members</div>
+          <table style="font-size:14px;">
+            <tr><td class="py-1 text-slate-500 pr-8">Each member's share</td><td class="py-1 font-semibold text-right" id="tax-share">-</td></tr>
+            <tr><td class="py-1 text-slate-500">SE Tax per member</td><td class="py-1 font-semibold text-red-500 text-right" id="tax-se-each">-</td></tr>
+            <tr style="border-top:1px solid #e2e8f0;"><td class="pt-2 font-bold text-slate-700">Quarterly per member</td><td class="pt-2 font-bold text-right text-lg" id="tax-quarterly-each">-</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 font-semibold text-slate-600">Expenses - Selected Period</div>
+      <div class="overflow-x-auto">
+        <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Recorded By</th></tr></thead>
+        <tbody id="fin-exp-table"><tr><td colspan="5" class="text-center text-slate-400 py-6">No expenses for this period</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div id="tab-tasks" class="section">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-slate-700">Task Tracker</h2>
+      <button class="btn-primary text-sm" onclick="openTaskModal('')">+ Add Task</button>
+    </div>
+    <div class="flex gap-3 mb-5 flex-wrap">
+      <select id="task-filter-status" onchange="renderTasks()" style="width:auto;padding:6px 10px;font-size:13px;">
+        <option value="">All Status</option><option value="open">Open</option>
+        <option value="inprogress">In Progress</option><option value="done">Done</option>
+      </select>
+      <select id="task-filter-assignee" onchange="renderTasks()" style="width:auto;padding:6px 10px;font-size:13px;">
+        <option value="">All People</option>
+      </select>
+    </div>
+    <div id="tasks-list"><div class="text-center text-slate-400 py-12">No tasks yet. Add one to get started.</div></div>
+  </div>
+
+  <!-- SETTINGS -->
   <div id="tab-settings" class="section">
     <div class="bg-white rounded-xl shadow-sm p-6 max-w-lg">
       <h2 class="text-lg font-bold text-slate-700 mb-4">Settings</h2>
       <div class="space-y-4">
-        <div><label class="form-label">Starting Cases</label><input id="s-starting-cases" type="number" value="445"/><p class="text-xs text-slate-400 mt-1">Original inventory (445 × 24 = 10,680 bottles)</p></div>
+        <div><label class="form-label">Starting Cases</label><input id="s-starting-cases" type="number" value="445"/><p class="text-xs text-slate-400 mt-1">Original inventory (445 x 24 = 10,680 bottles)</p></div>
         <div><label class="form-label">Bottles per Case</label><input id="s-bpc" type="number" value="24"/></div>
         <div><label class="form-label">COGS per Case ($)</label><input id="s-cogs-case" type="number" step="0.01" value="37.44"/><p class="text-xs text-slate-400 mt-1">Your cost per case ($37.44 = $1.56/bottle)</p></div>
         <div><label class="form-label">Retail Price per Bottle ($)</label><input id="s-retail-bottle" type="number" step="0.01" value="3.00"/></div>
         <div><label class="form-label">Wholesale Price per Case ($)</label><input id="s-wholesale-case" type="number" step="0.01" value="49.99"/></div>
         <div><label class="form-label">Giving Percentage (%)</label><input id="s-giving-pct" type="number" step="0.1" value="10"/></div>
+        <div><label class="form-label">IRS Mileage Rate ($/mile)</label><input id="s-mileage-rate" type="number" step="0.001" value="0.70"/><p class="text-xs text-slate-400 mt-1">2025 IRS standard rate: $0.70/mile. Update each January.</p></div>
       </div>
       <button class="btn-primary mt-6" onclick="saveSettings()">Save Settings</button>
       <div id="settings-msg" class="mt-3 text-green-600 text-sm" style="display:none;">Settings saved!</div>
     </div>
   </div>
-
 </div>
 
 <!-- Edit Sale Modal -->
@@ -314,49 +362,22 @@
       <div><label class="form-label">Email</label><input id="e-email" type="email"/></div>
       <div><label class="form-label">Phone</label><input id="e-phone" type="tel"/></div>
       <div><label class="form-label">Address</label><input id="e-address" type="text"/></div>
-      <div>
-        <label class="form-label">Organization Type</label>
-        <select id="e-orgtype">
-          <option value="">— Select —</option>
-          <option>Individual</option><option>Church</option><option>Business</option><option>Nonprofit</option><option>Other</option>
-        </select>
-      </div>
-      <div>
-        <label class="form-label">Price Type</label>
-        <select id="e-pricetype">
-          <option value="retail">Retail</option>
-          <option value="wholesale">Wholesale</option>
-          <option value="custom">Custom Price</option>
-          <option value="giveaway">Giveaway ($0)</option>
-        </select>
-      </div>
-      <div>
-        <label class="form-label">Quantity *</label>
-        <div style="display:flex;gap:8px;align-items:stretch;">
-          <select id="e-unit" style="width:auto;flex-shrink:0;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:white;outline:none;">
-            <option value="bottles">Bottles</option>
-            <option value="cases">Cases</option>
-          </select>
-          <input id="e-qty" type="number" min="1" style="flex:1;"/>
-        </div>
-      </div>
+      <div><label class="form-label">Organization Type</label>
+        <select id="e-orgtype"><option value="">- Select -</option><option>Individual</option><option>Church</option><option>Business</option><option>Nonprofit</option><option>Other</option></select></div>
+      <div><label class="form-label">Price Type</label>
+        <select id="e-pricetype"><option value="retail">Retail</option><option value="wholesale">Wholesale</option><option value="custom">Custom Price</option><option value="giveaway">Giveaway ($0)</option></select></div>
+      <div><label class="form-label">Quantity *</label>
+        <div style="display:flex;gap:8px;">
+          <select id="e-unit" style="width:auto;flex-shrink:0;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:white;">
+            <option value="bottles">Bottles</option><option value="cases">Cases</option></select>
+          <input id="e-qty" type="number" min="1" style="flex:1;"/></div></div>
       <div><label class="form-label">Revenue ($)</label><input id="e-revenue" type="number" step="0.01" min="0"/></div>
       <div><label class="form-label">Processing Fee ($)</label><input id="e-fee" type="number" step="0.01" min="0"/></div>
-      <div>
-        <label class="form-label">Payment Method</label>
-        <select id="e-payment">
-          <option value="">— Select —</option>
-          <option>Cash</option><option>Check</option><option>Venmo</option><option>Zelle</option><option>PayPal</option><option>Card</option><option>Other</option>
-        </select>
-      </div>
-      <div>
-        <label class="form-label">Status</label>
-        <select id="e-status"><option value="paid">Paid</option><option value="unpaid">Not Paid</option></select>
-      </div>
-      <div class="md:col-span-2">
-        <label class="form-label">Notes</label>
-        <textarea id="e-notes" rows="2" style="height:auto;resize:vertical;"></textarea>
-      </div>
+      <div><label class="form-label">Payment Method</label>
+        <select id="e-payment"><option value="">- Select -</option><option>Cash</option><option>Check</option><option>Venmo</option><option>Zelle</option><option>PayPal</option><option>Card</option><option>Other</option></select></div>
+      <div><label class="form-label">Status</label>
+        <select id="e-status"><option value="paid">Paid</option><option value="unpaid">Not Paid</option></select></div>
+      <div class="md:col-span-2"><label class="form-label">Notes</label><textarea id="e-notes" rows="2" style="height:auto;resize:vertical;"></textarea></div>
     </div>
     <div class="flex gap-3 mt-5">
       <button class="btn-primary" onclick="saveEditedSale()">Save Changes</button>
@@ -385,493 +406,148 @@
   </div>
 </div>
 
+<!-- Expense Modal -->
+<div id="expense-modal" class="modal-overlay">
+  <div class="bg-white rounded-xl p-6 w-full max-w-lg mx-4 my-6 shadow-xl">
+    <h3 class="font-bold text-slate-700 mb-4" id="expense-modal-title">Add Expense</h3>
+    <input type="hidden" id="exp-id"/>
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Date *</label><input id="exp-date" type="date"/></div>
+        <div><label class="form-label">Category *</label>
+          <select id="exp-category" onchange="updateExpenseMileage()">
+            <option value="">- Select -</option>
+            <option>Shipping</option><option>Bottle Cost</option><option>Subscriptions</option>
+            <option>Mileage</option><option>Supplies</option><option>Other</option>
+          </select></div>
+      </div>
+      <div id="exp-miles-row" style="display:none;">
+        <label class="form-label">Miles Driven *</label>
+        <input id="exp-miles" type="number" step="0.1" min="0" placeholder="0.0" oninput="calcMileageAmount()"/>
+        <div class="text-xs text-slate-400 mt-1" id="exp-miles-hint"></div>
+      </div>
+      <div><label class="form-label">Amount ($) *</label><input id="exp-amount" type="number" step="0.01" min="0" placeholder="0.00"/></div>
+      <div><label class="form-label">Description / Memo</label><input id="exp-description" type="text" placeholder="What was this for?"/></div>
+      <div><label class="form-label">Recorded By *</label><input id="exp-by" type="text" placeholder="Your name"/></div>
+      <div><label class="form-label">Notes</label><textarea id="exp-notes" rows="2" style="height:auto;resize:vertical;" placeholder="Optional details..."></textarea></div>
+    </div>
+    <div class="flex gap-3 mt-5">
+      <button class="btn-primary" onclick="saveExpense()">Save Expense</button>
+      <button onclick="closeExpenseModal()" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Cancel</button>
+    </div>
+    <div id="expense-error" class="mt-2 text-red-500 text-sm" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div id="task-modal" class="modal-overlay">
+  <div class="bg-white rounded-xl p-6 w-full max-w-lg mx-4 my-6 shadow-xl">
+    <h3 class="font-bold text-slate-700 mb-4" id="task-modal-title">Add Task</h3>
+    <input type="hidden" id="task-id"/>
+    <div class="space-y-4">
+      <div><label class="form-label">Title *</label><input id="task-title" type="text" placeholder="What needs to get done?"/></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Assigned To *</label><input id="task-assignee" type="text" placeholder="Cole, Jett, Both..."/></div>
+        <div><label class="form-label">Due Date</label><input id="task-due" type="date"/></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="form-label">Priority</label>
+          <select id="task-priority"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div>
+        <div><label class="form-label">Status</label>
+          <select id="task-status"><option value="open">Open</option><option value="inprogress">In Progress</option><option value="done">Done</option></select></div>
+      </div>
+      <div><label class="form-label">Notes</label><textarea id="task-notes" rows="2" style="height:auto;resize:vertical;" placeholder="Details, links, context..."></textarea></div>
+    </div>
+    <div class="flex gap-3 mt-5">
+      <button class="btn-primary" onclick="saveTask()">Save Task</button>
+      <button onclick="closeTaskModal()" style="padding:10px 20px;border-radius:8px;background:#f1f5f9;color:#475569;border:none;cursor:pointer;font-weight:600;">Cancel</button>
+    </div>
+    <div id="task-error" class="mt-2 text-red-500 text-sm" style="display:none;"></div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, deleteDoc, doc,
-  onSnapshot, serverTimestamp, query, orderBy, updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyAIqMnO_jpGGJkzpiB3EzLXOaehcEtJP4E",authDomain:"living-water-inventory.firebaseapp.com",projectId:"living-water-inventory",storageBucket:"living-water-inventory.firebasestorage.app",messagingSenderId:"1001965812858",appId:"1:1001965812858:web:de56791105303b24b98fc3"};
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+let sales=[],holders=[],expenses=[],tasks=[];
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAIqMnO_jpGGJkzpiB3EzLXOaehcEtJP4E",
-  authDomain: "living-water-inventory.firebaseapp.com",
-  projectId: "living-water-inventory",
-  storageBucket: "living-water-inventory.firebasestorage.app",
-  messagingSenderId: "1001965812858",
-  appId: "1:1001965812858:web:de56791105303b24b98fc3"
-};
+function getSettings(){return{startingCases:parseFloat(localStorage.getItem('lwc_startingCases')||'445'),bpc:parseFloat(localStorage.getItem('lwc_bpc')||'24'),cogsCase:parseFloat(localStorage.getItem('lwc_cogsCase')||'37.44'),retailBottle:parseFloat(localStorage.getItem('lwc_retailBottle')||'3.00'),wholesaleCase:parseFloat(localStorage.getItem('lwc_wholesaleCase')||'49.99'),givingPct:parseFloat(localStorage.getItem('lwc_givingPct')||'10'),mileageRate:parseFloat(localStorage.getItem('lwc_mileageRate')||'0.70')};}
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+window.saveSettings=function(){localStorage.setItem('lwc_startingCases',document.getElementById('s-starting-cases').value);localStorage.setItem('lwc_bpc',document.getElementById('s-bpc').value);localStorage.setItem('lwc_cogsCase',document.getElementById('s-cogs-case').value);localStorage.setItem('lwc_retailBottle',document.getElementById('s-retail-bottle').value);localStorage.setItem('lwc_wholesaleCase',document.getElementById('s-wholesale-case').value);localStorage.setItem('lwc_givingPct',document.getElementById('s-giving-pct').value);localStorage.setItem('lwc_mileageRate',document.getElementById('s-mileage-rate').value);const msg=document.getElementById('settings-msg');msg.style.display='block';setTimeout(()=>msg.style.display='none',2500);refreshAll();};
 
-let sales = [];
-let holders = [];
+function loadSettingsUI(){const s=getSettings();document.getElementById('s-starting-cases').value=s.startingCases;document.getElementById('s-bpc').value=s.bpc;document.getElementById('s-cogs-case').value=s.cogsCase;document.getElementById('s-retail-bottle').value=s.retailBottle;document.getElementById('s-wholesale-case').value=s.wholesaleCase;document.getElementById('s-giving-pct').value=s.givingPct;document.getElementById('s-mileage-rate').value=s.mileageRate;const pgp=document.getElementById('pl-giving-pct');if(pgp)pgp.textContent=s.givingPct;const pgp2=document.getElementById('pl-giving-pct2');if(pgp2)pgp2.textContent=s.givingPct;const sgp=document.getElementById('stat-giving-pct');if(sgp)sgp.textContent=s.givingPct+'% of net profit';}
 
-// ─── Settings ─────────────────────────────────────────────
-function getSettings() {
-  return {
-    startingCases: parseFloat(localStorage.getItem('lwc_startingCases') || '445'),
-    bpc: parseFloat(localStorage.getItem('lwc_bpc') || '24'),
-    cogsCase: parseFloat(localStorage.getItem('lwc_cogsCase') || '37.44'),
-    retailBottle: parseFloat(localStorage.getItem('lwc_retailBottle') || '3.00'),
-    wholesaleCase: parseFloat(localStorage.getItem('lwc_wholesaleCase') || '49.99'),
-    givingPct: parseFloat(localStorage.getItem('lwc_givingPct') || '10'),
-  };
-}
+function calcCogs(bottles){const s=getSettings();return(bottles/s.bpc)*s.cogsCase;}
+function fmt(n){if(isNaN(n))return'$0.00';const sign=n<0?'-$':'$';return sign+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtDate(ts){if(!ts)return'-';try{const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}catch(e){return'-';}}
 
-window.saveSettings = function() {
-  localStorage.setItem('lwc_startingCases', document.getElementById('s-starting-cases').value);
-  localStorage.setItem('lwc_bpc', document.getElementById('s-bpc').value);
-  localStorage.setItem('lwc_cogsCase', document.getElementById('s-cogs-case').value);
-  localStorage.setItem('lwc_retailBottle', document.getElementById('s-retail-bottle').value);
-  localStorage.setItem('lwc_wholesaleCase', document.getElementById('s-wholesale-case').value);
-  localStorage.setItem('lwc_givingPct', document.getElementById('s-giving-pct').value);
-  const msg = document.getElementById('settings-msg');
-  msg.style.display = 'block';
-  setTimeout(() => msg.style.display = 'none', 2500);
-  refreshAll();
-};
+onSnapshot(query(collection(db,'sales'),orderBy('createdAt','desc')),snap=>{sales=snap.docs.map(d=>({id:d.id,...d.data()}));refreshAll();});
+onSnapshot(query(collection(db,'holders'),orderBy('createdAt','desc')),snap=>{holders=snap.docs.map(d=>({id:d.id,...d.data()}));renderHolders();renderDashboard();});
+onSnapshot(query(collection(db,'expenses'),orderBy('createdAt','desc')),snap=>{expenses=snap.docs.map(d=>({id:d.id,...d.data()}));renderExpenses();renderExpenseTotals();renderFinancials();});
+onSnapshot(query(collection(db,'tasks'),orderBy('createdAt','desc')),snap=>{tasks=snap.docs.map(d=>({id:d.id,...d.data()}));renderTasks();renderTaskAssigneeFilter();});
 
-function loadSettingsUI() {
-  const s = getSettings();
-  document.getElementById('s-starting-cases').value = s.startingCases;
-  document.getElementById('s-bpc').value = s.bpc;
-  document.getElementById('s-cogs-case').value = s.cogsCase;
-  document.getElementById('s-retail-bottle').value = s.retailBottle;
-  document.getElementById('s-wholesale-case').value = s.wholesaleCase;
-  document.getElementById('s-giving-pct').value = s.givingPct;
-  if (document.getElementById('pl-giving-pct')) document.getElementById('pl-giving-pct').textContent = s.givingPct;
-  if (document.getElementById('pl-giving-pct2')) document.getElementById('pl-giving-pct2').textContent = s.givingPct;
-  if (document.getElementById('stat-giving-pct')) document.getElementById('stat-giving-pct').textContent = s.givingPct + '% of net profit';
-}
+function refreshAll(){renderDashboard();renderTransactions();renderPL();renderFinancials();}
 
-// ─── Helpers ──────────────────────────────────────────────
-function calcCogs(bottles) {
-  const s = getSettings();
-  return (bottles / s.bpc) * s.cogsCase;
-}
-function fmt(n) {
-  if (isNaN(n)) return '$0.00';
-  const sign = n < 0 ? '-$' : '$';
-  return sign + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-}
-function fmtDate(ts) {
-  if (!ts) return '—';
-  try {
-    const d = ts.toDate ? ts.toDate() : new Date(ts);
-    return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'});
-  } catch(e) { return '—'; }
-}
+function renderDashboard(){const s=getSettings();const totalBottles=s.startingCases*s.bpc;const soldBottles=sales.reduce((a,t)=>a+(t.bottles||0),0);const holderBottles=holders.reduce((a,h)=>a+((h.cases||0)*s.bpc),0);const inHandBottles=Math.max(0,totalBottles-soldBottles-holderBottles);const paidSales=sales.filter(t=>t.status==='paid');const unpaidSales=sales.filter(t=>t.status!=='paid');const revenue=paidSales.reduce((a,t)=>a+(t.revenue||0),0);const fees=sales.reduce((a,t)=>a+(t.fee||0),0);const cogs=sales.reduce((a,t)=>a+calcCogs(t.bottles||0),0);const netProfit=revenue-cogs-fees;const giving=netProfit*(s.givingPct/100);const unpaid=unpaidSales.reduce((a,t)=>a+(t.revenue||0),0);
+document.getElementById('bar-inhand').style.width=(inHandBottles/totalBottles*100)+'%';document.getElementById('bar-holders').style.width=(holderBottles/totalBottles*100)+'%';document.getElementById('bar-sold').style.width=(soldBottles/totalBottles*100)+'%';document.getElementById('bar-label').textContent=`${inHandBottles.toLocaleString()} in hand - ${holderBottles.toLocaleString()} with holders - ${soldBottles.toLocaleString()} sold`;
+document.getElementById('stat-total').textContent=totalBottles.toLocaleString();document.getElementById('stat-total-cases').textContent=s.startingCases+' cases';document.getElementById('stat-inhand').textContent=inHandBottles.toLocaleString();document.getElementById('stat-inhand-cases').textContent=(inHandBottles/s.bpc).toFixed(1)+' cases';document.getElementById('stat-holders').textContent=holderBottles.toLocaleString();document.getElementById('stat-holders-cases').textContent=holders.reduce((a,h)=>a+(h.cases||0),0)+' cases';document.getElementById('stat-sold').textContent=soldBottles.toLocaleString();document.getElementById('stat-sold-cases').textContent=(soldBottles/s.bpc).toFixed(1)+' cases';document.getElementById('stat-revenue').textContent=fmt(revenue);document.getElementById('stat-fees').textContent=fmt(fees);const pe=document.getElementById('stat-profit');pe.textContent=fmt(netProfit);pe.className='text-2xl font-bold '+(netProfit>=0?'positive':'negative');document.getElementById('stat-unpaid').textContent=fmt(unpaid);document.getElementById('stat-giving').textContent=fmt(giving);document.getElementById('stat-giving-pct').textContent=s.givingPct+'% of net profit';
+const tbody=document.getElementById('dash-table');if(!sales.length){tbody.innerHTML='<tr><td colspan="6" class="text-center text-slate-400 py-8">No transactions yet</td></tr>';return;}tbody.innerHTML=sales.slice(0,5).map(t=>{const np=(t.status==='paid'?(t.revenue||0):0)-calcCogs(t.bottles||0)-(t.fee||0);const isPaid=t.status==='paid';return`<tr><td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td><td class="font-medium">${t.name||'-'}</td><td>${(t.bottles||0).toLocaleString()}</td><td class="text-green-700">${fmt(t.revenue||0)}</td><td class="${np>=0?'positive':'negative'} font-semibold">${fmt(np)}</td><td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')">${isPaid?'Paid':'Not Paid'}</span></td></tr>`;}).join('');}
 
-// ─── Listeners ────────────────────────────────────────────
-onSnapshot(query(collection(db,'sales'), orderBy('createdAt','desc')), snap => {
-  sales = snap.docs.map(d => ({id:d.id, ...d.data()}));
-  refreshAll();
-});
+window.renderTransactions=function(){const filter=document.getElementById('filter-status').value;const data=filter?sales.filter(t=>t.status===filter):sales;const tbody=document.getElementById('txn-table');if(!data.length){tbody.innerHTML='<tr><td colspan="11" class="text-center text-slate-400 py-8">No transactions found</td></tr>';return;}tbody.innerHTML=data.map(t=>{const cogs=calcCogs(t.bottles||0);const rev=t.status==='paid'?(t.revenue||0):0;const np=rev-cogs-(t.fee||0);const isPaid=t.status==='paid';return`<tr><td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td><td><div class="font-medium">${t.name||'-'}</div>${t.email?`<div class="text-xs text-slate-400">${t.email}</div>`:''}${t.orgtype?`<div class="text-xs text-slate-400">${t.orgtype}</div>`:''}</td><td class="text-xs text-slate-500">${t.recordedBy||'-'}</td><td>${(t.bottles||0).toLocaleString()}</td><td class="text-green-700">${fmt(t.revenue||0)}</td><td class="text-red-500 text-xs">${fmt(cogs)}</td><td class="text-red-400 text-xs">${fmt(t.fee||0)}</td><td class="${np>=0?'positive':'negative'} font-semibold">${fmt(np)}</td><td class="text-xs">${t.payment||'-'}</td><td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')">${isPaid?'Paid':'Not Paid'}</span></td><td style="white-space:nowrap;"><button onclick="editSale('${t.id}')" style="font-size:12px;padding:4px 10px;background:#f0f9ff;color:#0369a1;border:none;border-radius:6px;cursor:pointer;margin-right:4px;">Edit</button><button class="btn-danger" onclick="deleteSale('${t.id}')">x</button></td></tr>`;}).join('');};
 
-onSnapshot(query(collection(db,'holders'), orderBy('createdAt','desc')), snap => {
-  holders = snap.docs.map(d => ({id:d.id, ...d.data()}));
-  renderHolders();
-  renderDashboard();
-});
+window.editSale=function(id){const t=sales.find(x=>x.id===id);if(!t)return;document.getElementById('e-id').value=t.id;document.getElementById('e-name').value=t.name||'';document.getElementById('e-by').value=t.recordedBy||'';document.getElementById('e-email').value=t.email||'';document.getElementById('e-phone').value=t.phone||'';document.getElementById('e-address').value=t.address||'';document.getElementById('e-orgtype').value=t.orgtype||'';document.getElementById('e-pricetype').value=t.priceType||'retail';document.getElementById('e-unit').value=t.unit||'bottles';document.getElementById('e-qty').value=t.qty||t.bottles||'';document.getElementById('e-revenue').value=t.revenue!=null?t.revenue:'';document.getElementById('e-fee').value=t.fee!=null?t.fee:'0';document.getElementById('e-payment').value=t.payment||'';document.getElementById('e-status').value=t.status||'paid';document.getElementById('e-notes').value=t.notes||'';document.getElementById('edit-sale-error').style.display='none';document.getElementById('edit-sale-modal').style.display='flex';};
+window.closeEditSaleModal=function(){document.getElementById('edit-sale-modal').style.display='none';};
+window.saveEditedSale=async function(){const id=document.getElementById('e-id').value;const name=document.getElementById('e-name').value.trim();const by=document.getElementById('e-by').value.trim();const unit=document.getElementById('e-unit').value;const qty=parseInt(document.getElementById('e-qty').value);const sett=getSettings();const bottles=unit==='cases'?qty*sett.bpc:qty;const errEl=document.getElementById('edit-sale-error');errEl.style.display='none';if(!name){errEl.textContent='Name is required.';errEl.style.display='block';return;}if(!by){errEl.textContent='"Recorded By" is required.';errEl.style.display='block';return;}if(!qty||qty<1){errEl.textContent='Quantity must be at least 1.';errEl.style.display='block';return;}const data={name,recordedBy:by,email:document.getElementById('e-email').value.trim(),phone:document.getElementById('e-phone').value.trim(),address:document.getElementById('e-address').value.trim(),orgtype:document.getElementById('e-orgtype').value,priceType:document.getElementById('e-pricetype').value,unit,qty,bottles,revenue:parseFloat(document.getElementById('e-revenue').value)||0,fee:parseFloat(document.getElementById('e-fee').value)||0,payment:document.getElementById('e-payment').value,status:document.getElementById('e-status').value,notes:document.getElementById('e-notes').value.trim()};try{await updateDoc(doc(db,'sales',id),data);closeEditSaleModal();}catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}};
+window.toggleStatus=async function(id,newStatus){try{await updateDoc(doc(db,'sales',id),{status:newStatus});}catch(e){alert('Error: '+e.message);}};
+window.deleteSale=async function(id){if(!confirm('Delete this transaction? This cannot be undone.'))return;try{await deleteDoc(doc(db,'sales',id));}catch(e){alert('Error: '+e.message);}};
 
-function refreshAll() {
-  renderDashboard();
-  renderTransactions();
-  renderPL();
-}
+function renderPL(){const s=getSettings();const totalBottles=sales.reduce((a,t)=>a+(t.bottles||0),0);const revenue=sales.filter(t=>t.status==='paid').reduce((a,t)=>a+(t.revenue||0),0);const cogs=sales.reduce((a,t)=>a+calcCogs(t.bottles||0),0);const fees=sales.reduce((a,t)=>a+(t.fee||0),0);const np=revenue-cogs-fees;const giving=np*(s.givingPct/100);document.getElementById('pl-bottles').textContent=totalBottles.toLocaleString();document.getElementById('pl-revenue').textContent=fmt(revenue);document.getElementById('pl-cogs').textContent=fmt(-cogs);document.getElementById('pl-fees').textContent=fmt(-fees);const pe=document.getElementById('pl-profit');pe.textContent=fmt(np);pe.className='pt-3 font-bold text-right text-xl '+(np>=0?'positive':'negative');document.getElementById('pl-giving').textContent=fmt(giving);document.getElementById('pl-giving-pct').textContent=s.givingPct;document.getElementById('pl-giving-pct2').textContent=s.givingPct;const tbody=document.getElementById('pl-table');if(!sales.length){tbody.innerHTML='<tr><td colspan="8" class="text-center text-slate-400 py-8">No transactions</td></tr>';return;}tbody.innerHTML=[...sales].reverse().map(t=>{const c=calcCogs(t.bottles||0);const rev=t.status==='paid'?(t.revenue||0):0;const np2=rev-c-(t.fee||0);const isPaid=t.status==='paid';return`<tr><td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td><td>${t.name||'-'}</td><td>${(t.bottles||0).toLocaleString()}</td><td class="text-green-700">${fmt(t.revenue||0)}</td><td class="text-red-500">${fmt(c)}</td><td class="text-red-400">${fmt(t.fee||0)}</td><td class="${np2>=0?'positive':'negative'} font-semibold">${fmt(np2)}</td><td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')">${isPaid?'Paid':'Not Paid'}</span></td></tr>`;}).join('');}
 
-// ─── Dashboard ────────────────────────────────────────────
-function renderDashboard() {
-  const s = getSettings();
-  const totalBottles = s.startingCases * s.bpc;
-  const soldBottles = sales.reduce((a,t) => a+(t.bottles||0), 0);
-  const holderBottles = holders.reduce((a,h) => a+((h.cases||0)*s.bpc), 0);
-  const inHandBottles = Math.max(0, totalBottles - soldBottles - holderBottles);
-  const paidSales = sales.filter(t => t.status === 'paid');
-  const unpaidSales = sales.filter(t => t.status !== 'paid');
-  const revenue = paidSales.reduce((a,t) => a+(t.revenue||0), 0);
-  const fees = sales.reduce((a,t) => a+(t.fee||0), 0);
-  const cogs = sales.reduce((a,t) => a+calcCogs(t.bottles||0), 0);
-  const netProfit = revenue - cogs - fees;
-  const giving = netProfit * (s.givingPct / 100);
-  const unpaid = unpaidSales.reduce((a,t) => a+(t.revenue||0), 0);
+function renderHolders(){const s=getSettings();const totalCases=holders.reduce((a,h)=>a+(h.cases||0),0);document.getElementById('holders-total').textContent=(totalCases*s.bpc).toLocaleString();document.getElementById('holders-total-cases').textContent=totalCases;const grid=document.getElementById('holders-grid');if(!holders.length){grid.innerHTML='<div class="text-slate-400 text-sm col-span-3 py-8 text-center">No holders yet.</div>';return;}grid.innerHTML=holders.map(h=>`<div class="bg-white rounded-xl shadow-sm p-4"><div class="flex justify-between items-start mb-2"><div class="font-semibold text-slate-700">${h.name}</div><div class="flex gap-1"><button onclick="editHolder('${h.id}')" style="font-size:12px;padding:3px 8px;background:#f0f9ff;color:#0369a1;border:none;border-radius:6px;cursor:pointer;">Edit</button><button onclick="deleteHolder('${h.id}')" style="font-size:12px;padding:3px 8px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;">x</button></div></div><div class="text-3xl font-bold text-amber-500">${h.cases}</div><div class="text-xs text-slate-400 mb-2">cases (${((h.cases||0)*s.bpc).toLocaleString()} bottles)</div>${h.phone?`<div class="text-xs text-slate-500">${h.phone}</div>`:''}${h.notes?`<div class="text-xs text-slate-400 mt-1 italic">${h.notes}</div>`:''}</div>`).join('');}
+window.openHolderModal=function(){['h-id','h-name','h-cases','h-phone','h-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('holder-modal-title').textContent='Add Holder';document.getElementById('holder-error').style.display='none';document.getElementById('holder-modal').style.display='flex';};
+window.closeHolderModal=function(){document.getElementById('holder-modal').style.display='none';};
+window.editHolder=function(id){const h=holders.find(x=>x.id===id);if(!h)return;document.getElementById('h-id').value=h.id;document.getElementById('h-name').value=h.name||'';document.getElementById('h-cases').value=h.cases||'';document.getElementById('h-phone').value=h.phone||'';document.getElementById('h-notes').value=h.notes||'';document.getElementById('holder-modal-title').textContent='Edit Holder';document.getElementById('holder-error').style.display='none';document.getElementById('holder-modal').style.display='flex';};
+window.saveHolder=async function(){const id=document.getElementById('h-id').value;const name=document.getElementById('h-name').value.trim();const cases=parseInt(document.getElementById('h-cases').value);const errEl=document.getElementById('holder-error');errEl.style.display='none';if(!name){errEl.textContent='Name required';errEl.style.display='block';return;}if(!cases||cases<1){errEl.textContent='Cases must be at least 1';errEl.style.display='block';return;}const data={name,cases,phone:document.getElementById('h-phone').value.trim(),notes:document.getElementById('h-notes').value.trim()};try{if(id){await updateDoc(doc(db,'holders',id),data);}else{await addDoc(collection(db,'holders'),{...data,createdAt:serverTimestamp()});}closeHolderModal();}catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}};
+window.deleteHolder=async function(id){if(!confirm('Remove this holder?'))return;try{await deleteDoc(doc(db,'holders',id));}catch(e){alert('Error: '+e.message);}};
 
-  document.getElementById('bar-inhand').style.width = (inHandBottles/totalBottles*100)+'%';
-  document.getElementById('bar-holders').style.width = (holderBottles/totalBottles*100)+'%';
-  document.getElementById('bar-sold').style.width = (soldBottles/totalBottles*100)+'%';
-  document.getElementById('bar-label').textContent =
-    `${inHandBottles.toLocaleString()} in hand · ${holderBottles.toLocaleString()} with holders · ${soldBottles.toLocaleString()} sold`;
+window.updatePriceFromType=function(){const s=getSettings();const type=document.getElementById('f-pricetype').value;const unit=document.getElementById('f-unit').value;const qty=parseFloat(document.getElementById('f-qty').value)||0;const bottles=unit==='cases'?qty*s.bpc:qty;const qtyHint=document.getElementById('qty-hint');if(qty>0){qtyHint.textContent=unit==='cases'?'= '+bottles.toLocaleString()+' bottles':'= '+(bottles/s.bpc).toFixed(2)+' cases';}else{qtyHint.textContent='';}const revEl=document.getElementById('f-revenue');const hint=document.getElementById('price-hint');if(type==='retail'){if(bottles>0)revEl.value=(bottles*s.retailBottle).toFixed(2);hint.textContent='@ $'+s.retailBottle+'/bottle (editable)';}else if(type==='wholesale'){const cases=Math.ceil(bottles/s.bpc);if(bottles>0)revEl.value=(cases*s.wholesaleCase).toFixed(2);hint.textContent='@ $'+s.wholesaleCase+'/case (editable)';}else if(type==='giveaway'){revEl.value='0.00';hint.textContent='Free (editable)';}else{hint.textContent='';}updateFeeFromPayment();updateCogsPreview();};
+window.updateFeeFromPayment=function(){const payment=document.getElementById('f-payment').value;const revenue=parseFloat(document.getElementById('f-revenue').value)||0;let fee=0;if(payment==='PayPal')fee=revenue*0.0349+0.49;else if(payment==='Card')fee=revenue*0.029+0.30;document.getElementById('f-fee').value=fee>0?fee.toFixed(2):'0';};
+window.updateCogsPreview=function(){const s=getSettings();const unit=document.getElementById('f-unit').value;const qty=parseFloat(document.getElementById('f-qty').value)||0;const bottles=unit==='cases'?qty*s.bpc:qty;const revenue=parseFloat(document.getElementById('f-revenue').value)||0;const fee=parseFloat(document.getElementById('f-fee').value)||0;if(!bottles){document.getElementById('cogs-preview').textContent='Fill in quantity and revenue to see profit estimate.';return;}const cogs=calcCogs(bottles);const np=revenue-cogs-fee;document.getElementById('cogs-preview').innerHTML=`COGS: <strong>${fmt(cogs)}</strong> &nbsp;|&nbsp; Revenue: <strong>${fmt(revenue)}</strong> &nbsp;|&nbsp; Fee: <strong>${fmt(fee)}</strong> &nbsp;|&nbsp; Net Profit: <strong class="${np>=0?'positive':'negative'}">${fmt(np)}</strong>`;};
+window.submitSale=async function(){const name=document.getElementById('f-name').value.trim();const by=document.getElementById('f-by').value.trim();const sett=getSettings();const unit=document.getElementById('f-unit').value;const qty=parseInt(document.getElementById('f-qty').value);const bottles=unit==='cases'?qty*sett.bpc:qty;const revenue=parseFloat(document.getElementById('f-revenue').value)||0;const errEl=document.getElementById('form-error');const okEl=document.getElementById('form-success');errEl.style.display='none';okEl.style.display='none';if(!name){errEl.textContent='Name is required.';errEl.style.display='block';return;}if(!by){errEl.textContent='"Recorded By" is required.';errEl.style.display='block';return;}if(!qty||qty<1){errEl.textContent='Quantity must be at least 1.';errEl.style.display='block';return;}const data={name,recordedBy:by,email:document.getElementById('f-email').value.trim(),phone:document.getElementById('f-phone').value.trim(),address:document.getElementById('f-address').value.trim(),orgtype:document.getElementById('f-orgtype').value,priceType:document.getElementById('f-pricetype').value,unit,qty,bottles,revenue,fee:parseFloat(document.getElementById('f-fee').value)||0,payment:document.getElementById('f-payment').value,status:document.getElementById('f-status').value,notes:document.getElementById('f-notes').value.trim(),createdAt:serverTimestamp()};try{await addDoc(collection(db,'sales'),data);okEl.textContent='Transaction saved!';okEl.style.display='block';clearForm();setTimeout(()=>okEl.style.display='none',3000);}catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}};
+window.clearForm=function(){['f-name','f-by','f-email','f-phone','f-address','f-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-orgtype').value='';document.getElementById('f-pricetype').value='retail';document.getElementById('f-unit').value='bottles';document.getElementById('f-qty').value='';document.getElementById('qty-hint').textContent='';document.getElementById('f-revenue').value='';document.getElementById('f-fee').value='0';document.getElementById('f-payment').value='';document.getElementById('f-status').value='paid';document.getElementById('price-hint').textContent='';document.getElementById('cogs-preview').textContent='Fill in quantity and revenue to see profit estimate.';};
 
-  document.getElementById('stat-total').textContent = totalBottles.toLocaleString();
-  document.getElementById('stat-total-cases').textContent = s.startingCases + ' cases';
-  document.getElementById('stat-inhand').textContent = inHandBottles.toLocaleString();
-  document.getElementById('stat-inhand-cases').textContent = (inHandBottles/s.bpc).toFixed(1) + ' cases';
-  document.getElementById('stat-holders').textContent = holderBottles.toLocaleString();
-  document.getElementById('stat-holders-cases').textContent = holders.reduce((a,h)=>a+(h.cases||0),0) + ' cases';
-  document.getElementById('stat-sold').textContent = soldBottles.toLocaleString();
-  document.getElementById('stat-sold-cases').textContent = (soldBottles/s.bpc).toFixed(1) + ' cases';
-  document.getElementById('stat-revenue').textContent = fmt(revenue);
-  document.getElementById('stat-fees').textContent = fmt(fees);
-  const pe = document.getElementById('stat-profit');
-  pe.textContent = fmt(netProfit);
-  pe.className = 'text-2xl font-bold ' + (netProfit >= 0 ? 'positive' : 'negative');
-  document.getElementById('stat-unpaid').textContent = fmt(unpaid);
-  document.getElementById('stat-giving').textContent = fmt(giving);
-  document.getElementById('stat-giving-pct').textContent = s.givingPct + '% of net profit';
+window.renderExpenses=function(){const cat=document.getElementById('exp-filter-cat').value;const month=document.getElementById('exp-filter-month').value;let data=expenses;if(cat)data=data.filter(e=>e.category===cat);if(month){data=data.filter(e=>{if(!e.date)return false;const d=new Date(e.date+'T12:00:00');const ym=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');return ym===month;});}const tbody=document.getElementById('exp-table');if(!data.length){tbody.innerHTML='<tr><td colspan="7" class="text-center text-slate-400 py-8">No expenses found</td></tr>';document.getElementById('exp-total-display').textContent='$0.00';return;}const total=data.reduce((a,e)=>a+(e.amount||0),0);document.getElementById('exp-total-display').textContent=fmt(total);tbody.innerHTML=data.map(e=>`<tr><td class="text-xs text-slate-500">${e.date||'-'}</td><td><span class="cat-chip">${e.category||'-'}</span></td><td>${e.description||'-'}</td><td class="text-red-600 font-semibold">${fmt(e.amount||0)}</td><td class="text-xs text-slate-400">${e.miles?e.miles+' mi':'-'}</td><td class="text-xs text-slate-500">${e.recordedBy||'-'}</td><td style="white-space:nowrap;"><button onclick="openExpenseModal('${e.id}')" style="font-size:12px;padding:4px 10px;background:#f0f9ff;color:#0369a1;border:none;border-radius:6px;cursor:pointer;margin-right:4px;">Edit</button><button class="btn-danger" onclick="deleteExpense('${e.id}')">x</button></td></tr>`).join('');};
 
-  const tbody = document.getElementById('dash-table');
-  if (!sales.length) { tbody.innerHTML='<tr><td colspan="6" class="text-center text-slate-400 py-8">No transactions yet</td></tr>'; return; }
-  tbody.innerHTML = sales.slice(0,5).map(t => {
-    const np = (t.status==='paid'?(t.revenue||0):0) - calcCogs(t.bottles||0) - (t.fee||0);
-    const isPaid = t.status === 'paid';
-    return `<tr>
-      <td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td>
-      <td class="font-medium">${t.name||'—'}</td>
-      <td>${(t.bottles||0).toLocaleString()}</td>
-      <td class="text-green-700">${fmt(t.revenue||0)}</td>
-      <td class="${np>=0?'positive':'negative'} font-semibold">${fmt(np)}</td>
-      <td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')" title="Click to toggle">${isPaid?'Paid':'Not Paid'}</span></td>
-    </tr>`;
-  }).join('');
-}
+function renderExpenseTotals(){const cats=['Shipping','Bottle Cost','Subscriptions','Mileage','Supplies','Other'];const el=document.getElementById('expense-totals');el.innerHTML=cats.map(c=>{const total=expenses.filter(e=>e.category===c).reduce((a,e)=>a+(e.amount||0),0);return`<div class="stat-card"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1 truncate">${c}</div><div class="text-lg font-bold ${total>0?'text-red-500':'text-slate-300'}">${fmt(total)}</div></div>`;}).join('');const months=[...new Set(expenses.map(e=>{if(!e.date)return null;const d=new Date(e.date+'T12:00:00');return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');}).filter(Boolean))].sort().reverse();const sel=document.getElementById('exp-filter-month');const cur=sel.value;sel.innerHTML='<option value="">All Time</option>'+months.map(m=>{const[y,mo]=m.split('-');const label=new Date(parseInt(y),parseInt(mo)-1,1).toLocaleDateString('en-US',{month:'short',year:'numeric'});return`<option value="${m}"${m===cur?' selected':''}>${label}</option>`;}).join('');}
 
-// ─── Transactions ─────────────────────────────────────────
-window.renderTransactions = function() {
-  const filter = document.getElementById('filter-status').value;
-  const data = filter ? sales.filter(t=>t.status===filter) : sales;
-  const tbody = document.getElementById('txn-table');
-  if (!data.length) { tbody.innerHTML='<tr><td colspan="11" class="text-center text-slate-400 py-8">No transactions found</td></tr>'; return; }
-  tbody.innerHTML = data.map(t => {
-    const cogs = calcCogs(t.bottles||0);
-    const rev = t.status==='paid' ? (t.revenue||0) : 0;
-    const np = rev - cogs - (t.fee||0);
-    const isPaid = t.status === 'paid';
-    return `<tr>
-      <td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td>
-      <td>
-        <div class="font-medium">${t.name||'—'}</div>
-        ${t.email?`<div class="text-xs text-slate-400">${t.email}</div>`:''}
-        ${t.orgtype?`<div class="text-xs text-slate-400">${t.orgtype}</div>`:''}
-      </td>
-      <td class="text-xs text-slate-500">${t.recordedBy||'—'}</td>
-      <td>${(t.bottles||0).toLocaleString()}</td>
-      <td class="text-green-700">${fmt(t.revenue||0)}</td>
-      <td class="text-red-500 text-xs">${fmt(cogs)}</td>
-      <td class="text-red-400 text-xs">${fmt(t.fee||0)}</td>
-      <td class="${np>=0?'positive':'negative'} font-semibold">${fmt(np)}</td>
-      <td class="text-xs">${t.payment||'—'}</td>
-      <td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')" title="Click to toggle">${isPaid?'Paid':'Not Paid'}</span></td>
-      <td style="white-space:nowrap;">
-        <button onclick="editSale('${t.id}')" style="font-size:12px;padding:4px 10px;background:#f0f9ff;color:#0369a1;border:none;border-radius:6px;cursor:pointer;margin-right:4px;">Edit</button>
-        <button class="btn-danger" onclick="deleteSale('${t.id}')">✕</button>
-      </td>
-    </tr>`;
-  }).join('');
-};
+window.openExpenseModal=function(id){document.getElementById('expense-error').style.display='none';if(id&&id!==''){const e=expenses.find(x=>x.id===id);if(!e)return;document.getElementById('expense-modal-title').textContent='Edit Expense';document.getElementById('exp-id').value=e.id;document.getElementById('exp-date').value=e.date||'';document.getElementById('exp-category').value=e.category||'';document.getElementById('exp-miles').value=e.miles||'';document.getElementById('exp-amount').value=e.amount!=null?e.amount:'';document.getElementById('exp-description').value=e.description||'';document.getElementById('exp-by').value=e.recordedBy||'';document.getElementById('exp-notes').value=e.notes||'';}else{document.getElementById('expense-modal-title').textContent='Add Expense';document.getElementById('exp-id').value='';document.getElementById('exp-date').value=new Date().toISOString().split('T')[0];document.getElementById('exp-category').value='';document.getElementById('exp-miles').value='';document.getElementById('exp-amount').value='';document.getElementById('exp-description').value='';document.getElementById('exp-by').value=localStorage.getItem('lwc_lastBy')||'';document.getElementById('exp-notes').value='';}updateExpenseMileage();document.getElementById('expense-modal').style.display='flex';};
+window.closeExpenseModal=function(){document.getElementById('expense-modal').style.display='none';};
+window.updateExpenseMileage=function(){const cat=document.getElementById('exp-category').value;const mileRow=document.getElementById('exp-miles-row');const amountField=document.getElementById('exp-amount');if(cat==='Mileage'){mileRow.style.display='block';amountField.readOnly=true;amountField.style.background='#f8fafc';calcMileageAmount();}else{mileRow.style.display='none';amountField.readOnly=false;amountField.style.background='white';}};
+window.calcMileageAmount=function(){const s=getSettings();const miles=parseFloat(document.getElementById('exp-miles').value)||0;const amount=miles*s.mileageRate;document.getElementById('exp-amount').value=amount>0?amount.toFixed(2):'';document.getElementById('exp-miles-hint').textContent=miles>0?`${miles} mi x $${s.mileageRate}/mi = ${fmt(amount)}`:`IRS rate: $${s.mileageRate}/mile`;};
+window.saveExpense=async function(){const id=document.getElementById('exp-id').value;const date=document.getElementById('exp-date').value;const category=document.getElementById('exp-category').value;const amount=parseFloat(document.getElementById('exp-amount').value);const by=document.getElementById('exp-by').value.trim();const errEl=document.getElementById('expense-error');errEl.style.display='none';if(!date){errEl.textContent='Date is required.';errEl.style.display='block';return;}if(!category){errEl.textContent='Category is required.';errEl.style.display='block';return;}if(isNaN(amount)||amount<0){errEl.textContent='Valid amount is required.';errEl.style.display='block';return;}if(!by){errEl.textContent='"Recorded By" is required.';errEl.style.display='block';return;}const data={date,category,amount,miles:category==='Mileage'?(parseFloat(document.getElementById('exp-miles').value)||0):null,description:document.getElementById('exp-description').value.trim(),recordedBy:by,notes:document.getElementById('exp-notes').value.trim()};localStorage.setItem('lwc_lastBy',by);try{if(id){await updateDoc(doc(db,'expenses',id),data);}else{await addDoc(collection(db,'expenses'),{...data,createdAt:serverTimestamp()});}closeExpenseModal();}catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}};
+window.deleteExpense=async function(id){if(!confirm('Delete this expense?'))return;try{await deleteDoc(doc(db,'expenses',id));}catch(e){alert('Error: '+e.message);}};
 
-window.editSale = function(id) {
-  const t = sales.find(x=>x.id===id); if(!t) return;
-  document.getElementById('e-id').value = t.id;
-  document.getElementById('e-name').value = t.name||'';
-  document.getElementById('e-by').value = t.recordedBy||'';
-  document.getElementById('e-email').value = t.email||'';
-  document.getElementById('e-phone').value = t.phone||'';
-  document.getElementById('e-address').value = t.address||'';
-  document.getElementById('e-orgtype').value = t.orgtype||'';
-  document.getElementById('e-pricetype').value = t.priceType||'retail';
-  document.getElementById('e-unit').value = t.unit||'bottles';
-  document.getElementById('e-qty').value = t.qty||t.bottles||'';
-  document.getElementById('e-revenue').value = t.revenue!=null?t.revenue:'';
-  document.getElementById('e-fee').value = t.fee!=null?t.fee:'0';
-  document.getElementById('e-payment').value = t.payment||'';
-  document.getElementById('e-status').value = t.status||'paid';
-  document.getElementById('e-notes').value = t.notes||'';
-  document.getElementById('edit-sale-error').style.display='none';
-  document.getElementById('edit-sale-modal').style.display='flex';
-};
+function renderFinancials(){const yearFilter=document.getElementById('fin-filter-year')?.value||'';const quarterFilter=document.getElementById('fin-filter-quarter')?.value||'';const allYears=new Set();sales.forEach(t=>{const ts=t.createdAt?.toDate?.();if(ts)allYears.add(ts.getFullYear().toString());});expenses.forEach(e=>{if(e.date)allYears.add(new Date(e.date+'T12:00:00').getFullYear().toString());});const sortedYears=[...allYears].sort().reverse();const yearSel=document.getElementById('fin-filter-year');if(yearSel){const cv=yearSel.value;yearSel.innerHTML='<option value="">All Time</option>'+sortedYears.map(y=>`<option value="${y}"${y===cv?' selected':''}>${y}</option>`).join('');}
+let fSales=sales,fExpenses=expenses;if(yearFilter){fSales=fSales.filter(t=>{const ts=t.createdAt?.toDate?.();return ts&&ts.getFullYear().toString()===yearFilter;});fExpenses=fExpenses.filter(e=>{if(!e.date)return false;return new Date(e.date+'T12:00:00').getFullYear().toString()===yearFilter;});}if(quarterFilter){const q=parseInt(quarterFilter);const mr=[[1,3],[4,6],[7,9],[10,12]][q-1];fSales=fSales.filter(t=>{const ts=t.createdAt?.toDate?.();if(!ts)return false;const m=ts.getMonth()+1;return m>=mr[0]&&m<=mr[1];});fExpenses=fExpenses.filter(e=>{if(!e.date)return false;const m=new Date(e.date+'T12:00:00').getMonth()+1;return m>=mr[0]&&m<=mr[1];});}
+const s=getSettings();const revenue=fSales.filter(t=>t.status==='paid').reduce((a,t)=>a+(t.revenue||0),0);const cogs=fSales.reduce((a,t)=>a+calcCogs(t.bottles||0),0);const fees=fSales.reduce((a,t)=>a+(t.fee||0),0);const grossProfit=revenue-cogs-fees;const expCats={'Shipping':0,'Bottle Cost':0,'Subscriptions':0,'Mileage':0,'Supplies':0,'Other':0};let totalExp=0;fExpenses.forEach(e=>{const c=expCats.hasOwnProperty(e.category)?e.category:'Other';expCats[c]=(expCats[c]||0)+(e.amount||0);totalExp+=(e.amount||0);});const netProfit=grossProfit-totalExp;const giving=netProfit*(s.givingPct/100);const seIncome=Math.max(0,netProfit)*0.9235;const seTax=seIncome*0.153;const quarterly=seTax/4;
+const se=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};se('fin-revenue',fmt(revenue));se('fin-cogs',fmt(-cogs));se('fin-fees',fmt(-fees));const gpEl=document.getElementById('fin-gross-profit');if(gpEl){gpEl.textContent=fmt(grossProfit);gpEl.className='py-2 font-semibold text-right '+(grossProfit>=0?'positive':'negative');}se('fin-exp-shipping',fmt(-expCats['Shipping']));se('fin-exp-bottle',fmt(-expCats['Bottle Cost']));se('fin-exp-subscriptions',fmt(-expCats['Subscriptions']));se('fin-exp-mileage',fmt(-expCats['Mileage']));se('fin-exp-supplies',fmt(-expCats['Supplies']));se('fin-exp-other',fmt(-expCats['Other']));se('fin-total-expenses',fmt(-totalExp));const npEl=document.getElementById('fin-net-profit');if(npEl){npEl.textContent=fmt(netProfit);npEl.className='pt-3 font-bold text-right text-xl '+(netProfit>=0?'positive':'negative');}se('fin-giving-pct',s.givingPct);const givEl=document.getElementById('fin-giving');if(givEl){givEl.textContent=fmt(giving);givEl.className='py-1 text-right text-sm font-semibold '+(netProfit>=0?'text-emerald-600':'text-slate-400');}se('tax-net',fmt(netProfit));se('tax-se-income',fmt(seIncome));se('tax-se-total',fmt(seTax));se('tax-quarterly',fmt(quarterly));se('tax-share',fmt(netProfit/2));se('tax-se-each',fmt(seTax/2));se('tax-quarterly-each',fmt(quarterly/2));
+const expTbody=document.getElementById('fin-exp-table');if(expTbody){if(!fExpenses.length){expTbody.innerHTML='<tr><td colspan="5" class="text-center text-slate-400 py-6">No expenses for this period</td></tr>';}else{expTbody.innerHTML=[...fExpenses].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>`<tr><td class="text-xs text-slate-500">${e.date||'-'}</td><td><span class="cat-chip">${e.category||'-'}</span></td><td>${e.description||'-'}</td><td class="text-red-600 font-semibold">${fmt(e.amount||0)}</td><td class="text-xs text-slate-500">${e.recordedBy||'-'}</td></tr>`).join('');}}}
 
-window.closeEditSaleModal = function() {
-  document.getElementById('edit-sale-modal').style.display='none';
-};
+window.renderTasks=function(){const sf=document.getElementById('task-filter-status')?.value||'';const af=document.getElementById('task-filter-assignee')?.value||'';let data=tasks;if(sf)data=data.filter(t=>t.status===sf);if(af)data=data.filter(t=>t.assignedTo===af);const container=document.getElementById('tasks-list');if(!container)return;if(!data.length){container.innerHTML='<div class="text-center text-slate-400 py-12">No tasks found.</div>';return;}const open=data.filter(t=>!t.status||t.status==='open');const inp=data.filter(t=>t.status==='inprogress');const done=data.filter(t=>t.status==='done');const card=t=>{const pr=t.priority||'medium';const st=t.status||'open';let dueHtml='';if(t.dueDate){const d=new Date(t.dueDate+'T12:00:00');const today=new Date();today.setHours(0,0,0,0);const diff=Math.ceil((d-today)/(1000*60*60*24));const label=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});if(diff<0)dueHtml=`<span style="font-size:11px;color:#dc2626;font-weight:600;">Overdue (${label})</span>`;else if(diff===0)dueHtml=`<span style="font-size:11px;color:#d97706;font-weight:600;">Due today</span>`;else dueHtml=`<span style="font-size:11px;color:#94a3b8;">Due ${label}</span>`;}const statusBadge={open:'<span class="badge-open">Open</span>',inprogress:'<span class="badge-inprogress">In Progress</span>',done:'<span class="badge-done">Done</span>'}[st]||'';const prioBadge={high:'<span class="badge-high">High</span>',medium:'<span class="badge-medium">Medium</span>',low:'<span class="badge-low">Low</span>'}[pr]||'';const nextSt={open:'inprogress',inprogress:'done',done:'open'}[st];const nextLabel={open:'Start',inprogress:'Complete',done:'Reopen'}[st];const nextColor={open:'background:#e0f2fe;color:#0369a1;',inprogress:'background:#dcfce7;color:#15803d;',done:'background:#f1f5f9;color:#64748b;'}[st];return`<div class="task-card priority-${pr} status-${st}"><div class="flex items-start justify-between gap-3"><div class="flex-1 min-w-0"><div class="font-semibold text-slate-700 ${st==='done'?'line-through text-slate-400':''}">${t.title||'Untitled'}</div>${t.notes?`<div class="text-xs text-slate-500 mt-1">${t.notes}</div>`:''}<div class="flex items-center gap-2 mt-2 flex-wrap">${statusBadge}${prioBadge}${t.assignedTo?`<span style="font-size:12px;color:#64748b;">${t.assignedTo}</span>`:''}${dueHtml}</div></div><div class="flex gap-1 flex-shrink-0 flex-wrap justify-end"><button onclick="cycleTaskStatus('${t.id}','${nextSt}')" style="font-size:12px;padding:4px 10px;${nextColor}border:none;border-radius:6px;cursor:pointer;white-space:nowrap;">${nextLabel}</button><button onclick="openTaskModal('${t.id}')" style="font-size:12px;padding:4px 8px;background:#f0f9ff;color:#0369a1;border:none;border-radius:6px;cursor:pointer;">Edit</button><button onclick="deleteTask('${t.id}')" style="font-size:12px;padding:4px 8px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;">x</button></div></div></div>`;};let html='';if(open.length)html+=`<div class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 mt-2">Open (${open.length})</div>`+open.map(card).join('');if(inp.length)html+=`<div class="text-xs font-semibold text-amber-500 uppercase tracking-wide mb-2 mt-4">In Progress (${inp.length})</div>`+inp.map(card).join('');if(done.length)html+=`<div class="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2 mt-4">Done (${done.length})</div>`+done.map(card).join('');container.innerHTML=html;};
 
-window.saveEditedSale = async function() {
-  const id = document.getElementById('e-id').value;
-  const name = document.getElementById('e-name').value.trim();
-  const by = document.getElementById('e-by').value.trim();
-  const unit = document.getElementById('e-unit').value;
-  const qty = parseInt(document.getElementById('e-qty').value);
-  const sett = getSettings();
-  const bottles = unit==='cases' ? qty*sett.bpc : qty;
-  const errEl = document.getElementById('edit-sale-error');
-  errEl.style.display='none';
-  if(!name){errEl.textContent='Name is required.';errEl.style.display='block';return;}
-  if(!by){errEl.textContent='"Recorded By" is required.';errEl.style.display='block';return;}
-  if(!qty||qty<1){errEl.textContent='Quantity must be at least 1.';errEl.style.display='block';return;}
-  const data = {
-    name, recordedBy:by,
-    email:document.getElementById('e-email').value.trim(),
-    phone:document.getElementById('e-phone').value.trim(),
-    address:document.getElementById('e-address').value.trim(),
-    orgtype:document.getElementById('e-orgtype').value,
-    priceType:document.getElementById('e-pricetype').value,
-    unit, qty, bottles,
-    revenue:parseFloat(document.getElementById('e-revenue').value)||0,
-    fee:parseFloat(document.getElementById('e-fee').value)||0,
-    payment:document.getElementById('e-payment').value,
-    status:document.getElementById('e-status').value,
-    notes:document.getElementById('e-notes').value.trim(),
-  };
-  try {
-    await updateDoc(doc(db,'sales',id), data);
-    closeEditSaleModal();
-  } catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}
-};
+function renderTaskAssigneeFilter(){const assignees=[...new Set(tasks.map(t=>t.assignedTo).filter(Boolean))].sort();const sel=document.getElementById('task-filter-assignee');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">All People</option>'+assignees.map(a=>`<option value="${a}"${a===cur?' selected':''}>${a}</option>`).join('');}
 
-window.toggleStatus = async function(id, newStatus) {
-  try { await updateDoc(doc(db,'sales',id), {status: newStatus}); }
-  catch(e) { alert('Error: '+e.message); }
-};
+window.openTaskModal=function(id){document.getElementById('task-error').style.display='none';if(id&&id!==''){const t=tasks.find(x=>x.id===id);if(!t)return;document.getElementById('task-modal-title').textContent='Edit Task';document.getElementById('task-id').value=t.id;document.getElementById('task-title').value=t.title||'';document.getElementById('task-assignee').value=t.assignedTo||'';document.getElementById('task-due').value=t.dueDate||'';document.getElementById('task-priority').value=t.priority||'medium';document.getElementById('task-status').value=t.status||'open';document.getElementById('task-notes').value=t.notes||'';}else{document.getElementById('task-modal-title').textContent='Add Task';document.getElementById('task-id').value='';document.getElementById('task-title').value='';document.getElementById('task-assignee').value=localStorage.getItem('lwc_lastBy')||'';document.getElementById('task-due').value='';document.getElementById('task-priority').value='medium';document.getElementById('task-status').value='open';document.getElementById('task-notes').value='';}document.getElementById('task-modal').style.display='flex';};
+window.closeTaskModal=function(){document.getElementById('task-modal').style.display='none';};
+window.saveTask=async function(){const id=document.getElementById('task-id').value;const title=document.getElementById('task-title').value.trim();const assignee=document.getElementById('task-assignee').value.trim();const errEl=document.getElementById('task-error');errEl.style.display='none';if(!title){errEl.textContent='Title is required.';errEl.style.display='block';return;}if(!assignee){errEl.textContent='"Assigned To" is required.';errEl.style.display='block';return;}const data={title,assignedTo:assignee,dueDate:document.getElementById('task-due').value||null,priority:document.getElementById('task-priority').value,status:document.getElementById('task-status').value,notes:document.getElementById('task-notes').value.trim(),updatedAt:serverTimestamp()};localStorage.setItem('lwc_lastBy',assignee);try{if(id){await updateDoc(doc(db,'tasks',id),data);}else{await addDoc(collection(db,'tasks'),{...data,createdAt:serverTimestamp()});}closeTaskModal();}catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}};
+window.cycleTaskStatus=async function(id,newStatus){try{await updateDoc(doc(db,'tasks',id),{status:newStatus,updatedAt:serverTimestamp()});}catch(e){alert('Error: '+e.message);}};
+window.deleteTask=async function(id){if(!confirm('Delete this task?'))return;try{await deleteDoc(doc(db,'tasks',id));}catch(e){alert('Error: '+e.message);}};
 
-window.deleteSale = async function(id) {
-  if (!confirm('Delete this transaction? This cannot be undone.')) return;
-  try { await deleteDoc(doc(db,'sales',id)); }
-  catch(e) { alert('Error: '+e.message); }
-};
+window.showTab=function(name,btn){document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');if(name==='financials')renderFinancials();};
 
-// ─── P&L ─────────────────────────────────────────────────
-function renderPL() {
-  const s = getSettings();
-  const totalBottles = sales.reduce((a,t)=>a+(t.bottles||0),0);
-  const revenue = sales.filter(t=>t.status==='paid').reduce((a,t)=>a+(t.revenue||0),0);
-  const cogs = sales.reduce((a,t)=>a+calcCogs(t.bottles||0),0);
-  const fees = sales.reduce((a,t)=>a+(t.fee||0),0);
-  const np = revenue - cogs - fees;
-  const giving = np * (s.givingPct/100);
-
-  document.getElementById('pl-bottles').textContent = totalBottles.toLocaleString();
-  document.getElementById('pl-revenue').textContent = fmt(revenue);
-  document.getElementById('pl-cogs').textContent = fmt(-cogs);
-  document.getElementById('pl-fees').textContent = fmt(-fees);
-  const pe = document.getElementById('pl-profit');
-  pe.textContent = fmt(np);
-  pe.className = 'pt-3 font-bold text-right text-xl ' + (np>=0?'positive':'negative');
-  document.getElementById('pl-giving').textContent = fmt(giving);
-  document.getElementById('pl-giving-pct').textContent = s.givingPct;
-  document.getElementById('pl-giving-pct2').textContent = s.givingPct;
-
-  const tbody = document.getElementById('pl-table');
-  if (!sales.length) { tbody.innerHTML='<tr><td colspan="8" class="text-center text-slate-400 py-8">No transactions</td></tr>'; return; }
-  tbody.innerHTML = [...sales].reverse().map(t => {
-    const c = calcCogs(t.bottles||0);
-    const rev = t.status==='paid'?(t.revenue||0):0;
-    const np2 = rev - c - (t.fee||0);
-    const isPaid = t.status==='paid';
-    return `<tr>
-      <td class="text-xs text-slate-500">${fmtDate(t.createdAt)}</td>
-      <td>${t.name||'—'}</td>
-      <td>${(t.bottles||0).toLocaleString()}</td>
-      <td class="text-green-700">${fmt(t.revenue||0)}</td>
-      <td class="text-red-500">${fmt(c)}</td>
-      <td class="text-red-400">${fmt(t.fee||0)}</td>
-      <td class="${np2>=0?'positive':'negative'} font-semibold">${fmt(np2)}</td>
-      <td><span class="${isPaid?'badge-paid':'badge-unpaid'}" onclick="toggleStatus('${t.id}','${isPaid?'unpaid':'paid'}')" title="Click to toggle">${isPaid?'Paid':'Not Paid'}</span></td>
-    </tr>`;
-  }).join('');
-}
-
-// ─── Holders ─────────────────────────────────────────────
-function renderHolders() {
-  const s = getSettings();
-  const totalCases = holders.reduce((a,h)=>a+(h.cases||0),0);
-  const totalBottles = totalCases * s.bpc;
-  document.getElementById('holders-total').textContent = totalBottles.toLocaleString();
-  document.getElementById('holders-total-cases').textContent = totalCases;
-
-  const grid = document.getElementById('holders-grid');
-  if (!holders.length) {
-    grid.innerHTML = '<div class="text-slate-400 text-sm col-span-3 py-8 text-center">No holders yet. Add someone holding inventory for you.</div>';
-    return;
-  }
-  grid.innerHTML = holders.map(h => `
-    <div class="bg-white rounded-xl shadow-sm p-4">
-      <div class="flex justify-between items-start mb-2">
-        <div class="font-semibold text-slate-700">${h.name}</div>
-        <div class="flex gap-1">
-          <button onclick="editHolder('${h.id}')" style="font-size:12px;padding:3px 8px;background:#f0f9ff;color:#0369a1;border:none;border-radius:6px;cursor:pointer;">Edit</button>
-          <button onclick="deleteHolder('${h.id}')" style="font-size:12px;padding:3px 8px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;">✕</button>
-        </div>
-      </div>
-      <div class="text-3xl font-bold text-amber-500">${h.cases}</div>
-      <div class="text-xs text-slate-400 mb-2">cases (${((h.cases||0)*s.bpc).toLocaleString()} bottles)</div>
-      ${h.phone?`<div class="text-xs text-slate-500">${h.phone}</div>`:''}
-      ${h.notes?`<div class="text-xs text-slate-400 mt-1 italic">${h.notes}</div>`:''}
-    </div>`).join('');
-}
-
-window.openHolderModal = function() {
-  document.getElementById('h-id').value='';
-  document.getElementById('h-name').value='';
-  document.getElementById('h-cases').value='';
-  document.getElementById('h-phone').value='';
-  document.getElementById('h-notes').value='';
-  document.getElementById('holder-modal-title').textContent='Add Holder';
-  document.getElementById('holder-error').style.display='none';
-  document.getElementById('holder-modal').style.display='flex';
-};
-
-window.closeHolderModal = function() {
-  document.getElementById('holder-modal').style.display='none';
-};
-
-window.editHolder = function(id) {
-  const h = holders.find(x=>x.id===id); if(!h) return;
-  document.getElementById('h-id').value=h.id;
-  document.getElementById('h-name').value=h.name||'';
-  document.getElementById('h-cases').value=h.cases||'';
-  document.getElementById('h-phone').value=h.phone||'';
-  document.getElementById('h-notes').value=h.notes||'';
-  document.getElementById('holder-modal-title').textContent='Edit Holder';
-  document.getElementById('holder-error').style.display='none';
-  document.getElementById('holder-modal').style.display='flex';
-};
-
-window.saveHolder = async function() {
-  const id = document.getElementById('h-id').value;
-  const name = document.getElementById('h-name').value.trim();
-  const cases = parseInt(document.getElementById('h-cases').value);
-  const errEl = document.getElementById('holder-error');
-  errEl.style.display='none';
-  if(!name){errEl.textContent='Name required';errEl.style.display='block';return;}
-  if(!cases||cases<1){errEl.textContent='Cases must be at least 1';errEl.style.display='block';return;}
-  const data = {name, cases, phone:document.getElementById('h-phone').value.trim(), notes:document.getElementById('h-notes').value.trim()};
-  try {
-    if(id){ await updateDoc(doc(db,'holders',id), data); }
-    else { await addDoc(collection(db,'holders'), {...data, createdAt:serverTimestamp()}); }
-    closeHolderModal();
-  } catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}
-};
-
-window.deleteHolder = async function(id) {
-  if(!confirm('Remove this holder?')) return;
-  try { await deleteDoc(doc(db,'holders',id)); }
-  catch(e){alert('Error: '+e.message);}
-};
-
-// ─── Record Sale ──────────────────────────────────────────
-window.updatePriceFromType = function() {
-  const s = getSettings();
-  const type = document.getElementById('f-pricetype').value;
-  const unit = document.getElementById('f-unit').value;
-  const qty = parseFloat(document.getElementById('f-qty').value)||0;
-  const bottles = unit==='cases' ? qty*s.bpc : qty;
-  const qtyHint = document.getElementById('qty-hint');
-  if(qty>0) {
-    qtyHint.textContent = unit==='cases'
-      ? '= '+bottles.toLocaleString()+' bottles'
-      : '= '+(bottles/s.bpc).toFixed(2)+' cases';
-  } else { qtyHint.textContent=''; }
-  const revEl = document.getElementById('f-revenue');
-  const hint = document.getElementById('price-hint');
-  if(type==='retail'){
-    if(bottles>0) revEl.value=(bottles*s.retailBottle).toFixed(2);
-    hint.textContent='@ $'+s.retailBottle+'/bottle (editable)';
-  } else if(type==='wholesale'){
-    const cases=Math.ceil(bottles/s.bpc);
-    if(bottles>0) revEl.value=(cases*s.wholesaleCase).toFixed(2);
-    hint.textContent='@ $'+s.wholesaleCase+'/case (editable)';
-  } else if(type==='giveaway'){
-    revEl.value='0.00'; hint.textContent='Free (editable)';
-  } else {
-    hint.textContent='';
-  }
-  updateFeeFromPayment();
-  updateCogsPreview();
-};
-
-window.updateFeeFromPayment = function() {
-  const payment = document.getElementById('f-payment').value;
-  const revenue = parseFloat(document.getElementById('f-revenue').value)||0;
-  let fee = 0;
-  if(payment==='PayPal')      fee = revenue * 0.0349 + 0.49;
-  else if(payment==='Card')   fee = revenue * 0.029 + 0.30;
-  document.getElementById('f-fee').value = fee > 0 ? fee.toFixed(2) : '0';
-};
-
-window.updateCogsPreview = function() {
-  const s=getSettings();
-  const unit=document.getElementById('f-unit').value;
-  const qty=parseFloat(document.getElementById('f-qty').value)||0;
-  const bottles=unit==='cases'?qty*s.bpc:qty;
-  const revenue=parseFloat(document.getElementById('f-revenue').value)||0;
-  const fee=parseFloat(document.getElementById('f-fee').value)||0;
-  if(!bottles){document.getElementById('cogs-preview').textContent='Fill in quantity and revenue to see profit estimate.';return;}
-  const cogs=calcCogs(bottles);
-  const np=revenue-cogs-fee;
-  document.getElementById('cogs-preview').innerHTML=
-    `COGS: <strong>${fmt(cogs)}</strong> &nbsp;|&nbsp; Revenue: <strong>${fmt(revenue)}</strong> &nbsp;|&nbsp; Fee: <strong>${fmt(fee)}</strong> &nbsp;|&nbsp; Net Profit: <strong class="${np>=0?'positive':'negative'}">${fmt(np)}</strong>`;
-};
-
-window.submitSale = async function() {
-  const name = document.getElementById('f-name').value.trim();
-  const by = document.getElementById('f-by').value.trim();
-  const sett = getSettings();
-  const unit = document.getElementById('f-unit').value;
-  const qty = parseInt(document.getElementById('f-qty').value);
-  const bottles = unit==='cases' ? qty*sett.bpc : qty;
-  const revenue = parseFloat(document.getElementById('f-revenue').value)||0;
-  const errEl = document.getElementById('form-error');
-  const okEl = document.getElementById('form-success');
-  errEl.style.display='none'; okEl.style.display='none';
-  if(!name){errEl.textContent='Name is required.';errEl.style.display='block';return;}
-  if(!by){errEl.textContent='"Recorded By" is required.';errEl.style.display='block';return;}
-  if(!qty||qty<1){errEl.textContent='Quantity must be at least 1.';errEl.style.display='block';return;}
-  const data = {
-    name, recordedBy:by,
-    email:document.getElementById('f-email').value.trim(),
-    phone:document.getElementById('f-phone').value.trim(),
-    address:document.getElementById('f-address').value.trim(),
-    orgtype:document.getElementById('f-orgtype').value,
-    priceType:document.getElementById('f-pricetype').value,
-    unit, qty, bottles, revenue,
-    fee:parseFloat(document.getElementById('f-fee').value)||0,
-    payment:document.getElementById('f-payment').value,
-    status:document.getElementById('f-status').value,
-    notes:document.getElementById('f-notes').value.trim(),
-    createdAt:serverTimestamp()
-  };
-  try {
-    await addDoc(collection(db,'sales'), data);
-    okEl.textContent='Transaction saved!'; okEl.style.display='block';
-    clearForm();
-    setTimeout(()=>okEl.style.display='none',3000);
-  } catch(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';}
-};
-
-window.clearForm = function() {
-  ['f-name','f-by','f-email','f-phone','f-address','f-notes'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-orgtype').value='';
-  document.getElementById('f-pricetype').value='retail';
-  document.getElementById('f-unit').value='bottles';
-  document.getElementById('f-qty').value='';
-  document.getElementById('qty-hint').textContent='';
-  document.getElementById('f-revenue').value='';
-  document.getElementById('f-fee').value='0';
-  document.getElementById('f-payment').value='';
-  document.getElementById('f-status').value='paid';
-  document.getElementById('price-hint').textContent='';
-  document.getElementById('cogs-preview').textContent='Fill in quantity and revenue to see profit estimate.';
-};
-
-// ─── Tabs ─────────────────────────────────────────────────
-window.showTab = function(name, btn) {
-  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  btn.classList.add('active');
-};
-
-// init
 loadSettingsUI();
 </script>
 </body>
